@@ -11,7 +11,7 @@
 
 ## scripts to drive spline generation on the grid (experts only for now)
 
-* `gen_genie_splines_v2.sh`  - GENIE v3, with offsite capabilities
+* `gen_genie_splines_v3.sh`  - GENIE v3, with offsite capabilities
 * `gen_genie_splines_v2.sh`  - old script for GENIE v2
 
 
