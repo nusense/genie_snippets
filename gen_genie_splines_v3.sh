@@ -1,10 +1,9 @@
 #! /usr/bin/env bash
 export THISFILE="$0"
 export b0=`basename $0`
-export GEN_GENIE_SPLINE_VERSION=2019-03-25
+export GEN_GENIE_SPLINE_VERSION=2019-03-26
 echo -e "${OUTRED}GEN_GENIE_SPLINE_VERSION ${GEN_GENIE_SPLINE_VERSION} ${OUTNOCOL}"
 
-export CLEAN_FAKE=1
 export IFDHC_VERSION="v2_3_9"  # usually "" default to v2_1_0 currently
 #                              # v2_1_0 now setups up v2_3_6a ifdhc_config
 #                              # ... in _some_ cases?
@@ -89,6 +88,9 @@ Initialization step uses the flags:
       --no-Gd                 [${NOGDOPT}]       exclude Gd isotopes
                                                  required prior to v2_9_0
       --split-nu-isotopes     [${SPLITNUISOTOPES}]  when doing isotopes run single nu flavors
+
+      --skip-stage3-check     DANGER: do NOT do this without very good cause
+      --keep-scratch          don't do cleanup of fake_CONDOR_SCRATCH on non-worker node
 
 The initialization procedure creates the actual working area under the
 top directory such that:
@@ -311,7 +313,7 @@ function process_lists()
 
   #
   #echo "=== process_lists about to get_local_copy cfg/isotopes.cfg"
-  get_local_copy cfg/isotopes.cfg
+  get_local_copy cfg/isotopes.cfg 0
   #echo "=== process_lists about to listify_isotopes"
   listify_isotopes   isotopes.cfg
 
@@ -474,12 +476,16 @@ function have_file () {
   if [ "\${TRIED_GET_OUTPUTDIR_LS}" != "yes" ]; then
     get_outputdir_ls
   fi
+  # NOTE: this is an _incomplete_ match ... it just a quick test for sanity
+  #    looking for xyz.ext might match xyz.ext-other
   ncopies=\`grep -c \${filetocheck} \${_CONDOR_SCRATCH_DIR}/outputdir.ls\`
   return \${ncopies}
 }
 
 function get_local_copy () {
    leafpath=\$1
+   failokay=0
+   if [ \$# -gt 1 ]; then failokay=\$2 ; fi
    fullpath=\${OUTPUTDIR}/\${leafpath}
    localfile=\`basename \${fullpath}\`
 
@@ -494,7 +500,12 @@ function get_local_copy () {
    nfiles=\$?
    echo "get_local_copy have_file returned \${nfiles}"
    if [ \${nfiles} -ne 1 ]; then
-     echo -e "\${b0}:\${OUTRED}get_local_copy of \${fullpath} not possible (\${nfiles})\${OUTNOCOL}" >&2
+     echo -e "\${b0}:\${OUTRED}get_local_copy of \${fullpath} not possible (\${nfiles} files)\${OUTNOCOL}" >&2
+     if [ \${nfiles} -eq 0 -a \${failokay} -eq 1 ]; then
+       status=127
+       echo -e "\${b0}:\${OUTYELLOW}get_local_copy of \${leafpath} fail is allowed, return status=\${status}\${OUTNOCOL}" >&2
+       return \${status}
+     fi
      echo "\${_CONDOR_SCRATCH_DIR}/outputdir.ls:" >&2
      cat   \${_CONDOR_SCRATCH_DIR}/outputdir.ls >&2
      exit 142
@@ -504,6 +515,10 @@ function get_local_copy () {
      status=\$?
      if [ \${status} -ne 0 ]; then
        echo -e "\${b0}:\${OUTRED}get_local_copy of \${leafpath} failed using \${MYCP} status=\${status}\${OUTNOCOL}" >&2
+       if [ \${failokay} -eq 1 ]; then
+         echo -e "\${b0}:\${OUTYELLOW}get_local_copy of \${leafpath} fail is allowed, return status=\${status}\${OUTNOCOL}" >&2
+         return \${status}
+       fi
        exit \${status}
      fi
      return 0
@@ -1306,6 +1321,7 @@ function setup_ifdh_cp()
           echo "explicitly setting up ifdhc_config ${IFDHC_CONFIG_VERSION}"
           setup ifdhc_config ${IFDHC_CONFIG_VERSION}
         fi
+        export IFDH_CP_MAXRETRIES=2 # because 7 is way too many attepts
         # is "ifdh" now in our path?
         which_ifdh=\`which ifdh 2>/dev/null \`
         if [ \${VERBOSEIFDHSETUP} -ne 0 ]; then
@@ -1558,7 +1574,13 @@ function print_status()
   if [ ${stage3_status} -ne 0 ]; then
     echo -e "${b0}:${OUTRED} stage3 incomplete, missing ${stage3_status} ${OUTNOCOL}"
     echo -e "${OUTRED}  suggest --run-stage 3 -s { $xlist3 } ${OUTNOCOL}"
-    return 3
+    if [ ${SKIPSTAGE3CHECK} -eq 1 ]; then
+      echo -e "${OUTYELLOW}==============================================================================================${OUTNOCOL}"
+      echo -e "${OUTRED}  'Zowie' Batman, you're living dangerously with --skip-stage3-check"
+      echo -e "${OUTYELLOW}==============================================================================================${OUTNOCOL}"
+    else
+      return 3
+    fi
   else
     echo -e "${OUTBLUE}${b0}:${OUTGREEN} stage3 complete ${OUTNOCOL}"
   fi
@@ -1727,7 +1749,7 @@ function combine_stage1()
   for fth in `seq 1 $NFREENUCPAIRS`
   do
     set_fth_freenucpair $fth
-    get_local_copy work-products/freenucs/${FREENUC1FBASE}.xml
+    get_local_copy work-products/freenucs/${FREENUC1FBASE}.xml 0
     if [ -n "$FLIST" ]; then FLIST="${FLIST}," ; fi
     FLIST="${FLIST}./${FREENUC1FBASE}.xml"
   done
@@ -1758,7 +1780,7 @@ function generate_isotope()
   LOG=${ISOFBASE}.log
   if [ -f $LOG ]; then rm $LOG; fi
 
-  get_local_copy work-products/${FREENUCSUM}.xml
+  get_local_copy work-products/${FREENUCSUM}.xml 0
   ${MYCP} ${OUTPUTDIR}/work-products/${FREENUCSUM}.xml ./${FREENUCSUM}.xml
   INXSEC="--input-cross-sections ${FREENUCSUM}.xml"
 
@@ -1826,7 +1848,7 @@ function generate_isotope_split_nu()
   # LOG=${ISOFBASE}.log
   if [ -f $LOG ]; then rm $LOG; fi
 
-  get_local_copy work-products/${FREENUCSUM}.xml
+  get_local_copy work-products/${FREENUCSUM}.xml 0
   INXSEC="--input-cross-sections ${FREENUCSUM}.xml"
 
   echo " "         >> $LOG
@@ -1896,7 +1918,7 @@ function combine_stage3()
     for ith in `seq 1 $NISOTOPES`
     do
       set_ith_isotope $ith
-      get_local_copy work-products/isotopes/${ISOFBASE}.xml
+      get_local_copy work-products/isotopes/${ISOFBASE}.xml 0
       if [ -n "$FLIST" ]; then FLIST="${FLIST}," ; fi
       FLIST="${FLIST}${ISOFBASE}.xml"
     done
@@ -1916,11 +1938,25 @@ function combine_stage3()
         set_pth_probe $pth
         THISFNAME=gxspl-${NAMEP}-${NAMEI}.xml
         if [ ${VERBOSE} -gt 0 ]; then echo ${THISFNAME} ; fi
-        get_local_copy work-products/isotopes/${THISFNAME}
+        get_local_copy work-products/isotopes/${THISFNAME} ${SKIPSTAGE3CHECK}
+        get_local_copy_status=$?
+        if [ ${get_local_copy_status} -ne 0 ]; then
+          if [ ${SKIPSTAGE3CHECK} -eq 1 ]; then
+            echo -e "${OUTYELLOW}${b0}: create a fake ${THISFNAME}${OUTNOCOL}"
+            # create a fake
+            echo '<?xml version="1.0" encoding="ISO-8859-1"?>'         > ${THISFNAME}
+            echo '<genie_xsec_spline_list version="3.00" uselog="1">' >> ${THISFNAME}
+            echo "<genie_tune name=\"${TUNE}\">"                      >> ${THISFNAME}
+            echo '</genie_tune>'                                      >> ${THISFNAME}
+            echo '</genie_xsec_spline_list>'                          >> ${THISFNAME}
+          fi
+        fi
+        # add "," if necessary
         if [ -n "$FLISTISO" ]; then FLISTISO="${FLISTISO}," ; fi
         # save char no "./"
         FLISTISO="${FLISTISO}${THISFNAME}"
       done
+
       # do partial sums over probes ...
       echo time gspladd -f ${FLISTISO} -o ${THISFNAMENUSUM}
       echo time gspladd -f ${FLISTISO} -o ${THISFNAMENUSUM} >> ${LOG}
@@ -1938,7 +1974,6 @@ function combine_stage3()
         gzip -9 ${THISFNAMENUSUM}
       fi
     done
-
   fi
   if [ ${MISSING} -gt 0 ]; then
     echo -e "${OUTRED}missing ${MISSING} input files ... quit ${OUTNOCOL}"
@@ -2345,6 +2380,9 @@ export  INITSETUPSTR="ups:genie%v3_XX%e17:r6:prof:rhatcher"
 #  *mac-124096*                     ) INITUPS="rhatcher" ;;
 #esac
 
+export SKIPSTAGE3CHECK=0
+export CLEAN_FAKE=1
+
 ##############################################################################
 process_args() {
 
@@ -2359,7 +2397,9 @@ process_args() {
   # longarg "::" means optional arg, if not supplied given as null string
   # use this for targfile lowth peanut
   TEMP=`getopt -n $0 -s bash -a \
-     --longoptions="help verbose top: version: qualifier: setup: init rewrite split-nu-isotopes knots: emax: tune: genlist: no-Gd run-stage: subprocess: instance: status finalize-cfg:: launch-dag:: morehelp debug trace" \
+     --longoptions="help verbose top: version: qualifier: setup: init rewrite split-nu-isotopes \
+     knots: emax: tune: genlist: no-Gd run-stage: subprocess: instance: status finalize-cfg:: \
+     launch-dag:: skip-stage3-check keep-scratch morehelp debug trace" \
      -o hvT:V:Q:ir:s:-: -- "$@" `
 # remove "ups genie-v: genie-q:", replace w/ "setup:"
   eval set -- "${TEMP}"
@@ -2402,6 +2442,8 @@ process_args() {
       -r | --run-stage    ) export CURSTAGE="$2";       shift  ;;
       -s | --subprocess   ) export CURINSTANCE="$2";    shift  ;;
            --instance     ) export CURINSTANCE="$2";    shift  ;;
+           --skip-stage3-check ) export SKIPSTAGE3CHECK=1      ;;
+           --keep-scratch ) export CLEAN_FAKE=0                ;;
            --debug        ) export VERBOSE=999                 ;;
            --trace        ) export DOTRACE=1                   ;;
       -*                  ) echo "unknown flag $opt ($1)"
@@ -2571,6 +2613,7 @@ else
       echo "explicitly setting up ifdhc_config ${IFDHC_CONFIG_VERSION}"
       setup ifdhc_config ${IFDHC_CONFIG_VERSION}
     fi
+    export IFDH_CP_MAXRETRIES=2 # because 7 is way too many attepts
     which ifdh
     echo -e "${OUTRED}${b0}: ifdh cp ${OUTPUTDIR}/cfg/cfg.tar.gz cfg.tar.gz ${OUTNOCOL}"
     ifdh cp ${OUTPUTDIR}/cfg/cfg.tar.gz cfg.tar.gz
