@@ -1572,7 +1572,7 @@ function print_status()
     done
   fi
   if [ ${stage3_status} -ne 0 ]; then
-    echo -e "${b0}:${OUTRED} stage3 incomplete, missing ${stage3_status} ${OUTNOCOL}"
+    echo -e "${b0}:${OUTRED} stage3 incomplete, missing ${stage3_status} of ${NNUISOTOPEFILES} files${OUTNOCOL}"
     echo -e "${OUTRED}  suggest --run-stage 3 -s { $xlist3 } ${OUTNOCOL}"
     if [ ${SKIPSTAGE3CHECK} -eq 1 ]; then
       echo -e "${OUTYELLOW}==============================================================================================${OUTNOCOL}"
@@ -2063,9 +2063,9 @@ echo "#" >> $DAG
 echo "<parallel>" >> $DAG
 # --expected-lifetime 3h,8h  85200s(=23.666hr)
 # -n is REQUIRED apparently (creates but doesn't submit job)
-jsdcmd="  jobsub_submit -n -g --group JOBSUB_GROUP "
-#jsdcmd="${jsdcmd} --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE "
-jsdcmd="${jsdcmd} --resource-provides=usage_model=OFFSITE "
+jsdcmd="  jobsub_submit -n -g --group ${JOBSUB_GROUP_ARG} "
+jsdcmd="${jsdcmd} --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE "
+#jsdcmd="${jsdcmd} --resource-provides=usage_model=OFFSITE "
 jsdcmd="${jsdcmd} --append_condor_requirements='(TARGET.HAS_CVMFS_dune_opensciencegrid_org==true)' "
 bigmem=" --memory=4095MB "
 shortt=" --expected-lifetime 3h"
