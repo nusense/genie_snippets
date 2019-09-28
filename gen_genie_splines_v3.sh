@@ -1,13 +1,13 @@
 #! /usr/bin/env bash
 export THISFILE="$0"
 export b0=`basename $0`
-export GEN_GENIE_SPLINE_VERSION=2019-03-26
+export GEN_GENIE_SPLINE_VERSION=2019-09-25
 echo -e "${OUTRED}GEN_GENIE_SPLINE_VERSION ${GEN_GENIE_SPLINE_VERSION} ${OUTNOCOL}"
 
-export IFDHC_VERSION="v2_3_9"  # usually "" default to v2_1_0 currently
+export IFDHC_VERSION="" # "v2_3_9"  # usually "" default to v2_1_0 currently
 #                              # v2_1_0 now setups up v2_3_6a ifdhc_config
 #                              # ... in _some_ cases?
-export IFDHC_CONFIG_VERSION="v2_3_9" # force version ""=leave alone
+export IFDHC_CONFIG_VERSION="" # "v2_3_9" # force version ""=leave alone
 #
 # users need to modify the following products of this script:
 #   'define_cfg.sh'        adjust parameters in defined function
@@ -85,8 +85,8 @@ Initialization step uses the flags:
       --tune     <tune-name>  [${INITTUNE}]      model config / tune eg. G00_00b or G18_10j_PP_xxx
       --genlist  <evgenlist>  [${INITGENLIST}]   a config name found in (e.g. "Default")
                                                  EventGeneratorListAssembler.xml
-      --no-Gd                 [${NOGDOPT}]       exclude Gd isotopes
-                                                 required prior to v2_9_0
+      --electron              [${DOELECTRON}]    do electron scattering instead of neutrinos
+
       --split-nu-isotopes     [${SPLITNUISOTOPES}]  when doing isotopes run single nu flavors
 
       --skip-stage3-check     DANGER: do NOT do this without very good cause
@@ -219,6 +219,7 @@ function define_cfg()
   export EMIN=0.01    # (ignored by gxspl)
   export EMAX=${INITEMAX}
   export SPLITNUISOTOPES=${SPLITNUISOTOPES}
+  export ELECTRONPROBE=${INITDOELECTRON}
 
   # collection of event generator process to calculate
   #   (see:  \$GENIE/config/${INITTUNE}/TuneGeneratorList.xml )
@@ -277,12 +278,17 @@ function define_cfg()
 
   #
   # which neutrino flavors to include
-  #  NULISTFULL    - all combinations to generate
-  #  NULISTREDUCED - flavors to retain in reduced file
+  #  PROBELISTFULL    - all combinations to generate
+  #  PROBELISTREDUCED - flavors to retain in reduced file
   #
 
-  export NUARRAYFULL=( 12 -12 14 -14 16 -16 )
-  export NUARRAYREDUCED=( 12 -12 14 -14 16 -16 )
+  if [ \${ELECTRONPROBE} -eq 0 ]; then
+    export PROBEARRAYFULL=( 12 -12 14 -14 16 -16 )
+    export PROBEARRAYREDUCED=( 12 -12 14 -14 16 -16 )
+  else
+    export PROBEARRAYFULL=( 11 )
+    export PROBEARRAYREDUCED=( 11 )
+  fi
 
   ############################################################################
   # do not change the following lines
@@ -304,12 +310,12 @@ function process_lists()
   export FREENUCLIST="1000000010,1000010010"
   export FREENUCNAMES="freen,freep"
 
-  #echo " ....  probes full: \${NUARRAYFULL[*]}   reduced: \${NUARRAYREDUCED[*]}"
-  let NNU=0;
-  for j in \${NUARRAYFULL[*]} ; do let NNU=\${NNU}+1; done
-  export NNU
-  export NULISTFULL=\`echo \${NUARRAYFULL[*]} | tr -s ' ' | tr ' ' ','\`
-  export NULISTREDUCED=\`echo \${NUARRAYREDUCED[*]} | tr -s ' ' | tr ' ' ','\`
+  #echo " ....  probes full: \${PROBEARRAYFULL[*]}   reduced: \${PROBEARRAYREDUCED[*]}"
+  let NPROBE=0;
+  for j in \${PROBEARRAYFULL[*]} ; do let NPROBE=\${NPROBE}+1; done
+  export NPROBE
+  export PROBELISTFULL=\`echo \${PROBEARRAYFULL[*]} | tr -s ' ' | tr ' ' ','\`
+  export PROBELISTREDUCED=\`echo \${PROBEARRAYREDUCED[*]} | tr -s ' ' | tr ' ' ','\`
 
   #
   #echo "=== process_lists about to get_local_copy cfg/isotopes.cfg"
@@ -322,7 +328,7 @@ function process_lists()
   export NFREENUCPAIRS=0
   for nth in 1 2 ; do
     set_nth_freenuc \$nth
-    for pth in \`seq 1 \$NNU\` ; do
+    for pth in \`seq 1 \$NPROBE\` ; do
       set_pth_probe \$pth
       PRECHAR=""
       if [ -n "\${FREENUCFILES}" ]; then PRECHAR=","; fi
@@ -353,9 +359,15 @@ function listify_isotopes()
   # use "\$ISOLINES" to preserve \n, trim trailing ","
   export ISOLISTFULL=\`echo "\$ISOLINES"  | cut -d' ' -f1 | tr [:space:] ',' | sed -e 's/,\$//' \`
   export ISONAMESFULL=\`echo "\$ISOLINES" | cut -d' ' -f2 | tr [:space:] ',' | sed -e 's/,\$//' \`
-  export ISOLISTREDUCED=\`echo "\$ISOLINES" | grep reduced | cut -d' ' -f1 | tr [:space:] ',' | sed -e 's/,\$//' \`
-  export ISONAMESREDUCED=\`echo "\$ISOLINES" | grep reduced | cut -d' ' -f2 | tr [:space:] ',' \`
-  export NISOTOPESREDUCED=\`echo "\$ISOLINES" | grep reduced | egrep -c '^100' \`
+
+  # used different selections for "reduced" isotope lists for electrons
+  export REDUCEDKEY=reduced
+  if [ \${ELECTRONPROBE} -eq 1 ]; then
+      export REDUCEDKEY=electron
+  fi
+  export ISOLISTREDUCED=\`echo "\$ISOLINES" | grep "\$REDUCEDKEY" | cut -d' ' -f1 | tr [:space:] ',' | sed -e 's/,\$//' \`
+  export ISONAMESREDUCED=\`echo "\$ISOLINES" | grep "\$REDUCEDKEY" | cut -d' ' -f2 | tr [:space:] ',' \`
+  export NISOTOPESREDUCED=\`echo "\$ISOLINES" | grep "\$REDUCEDKEY" | egrep -c '^100' \`
   export ISOLISTTGRAPH=\`echo "\$ISOLINES" | egrep 'root|graph' | cut -d' ' -f1 | tr [:space:] ',' | sed -e 's/,\$//' \`
 }
 
@@ -378,11 +390,13 @@ function set_pth_probe()
 {
   # pick 'pth' in list ... starting at 1
   export PTH=\$1
-  export PDGP=\`echo \$NULISTFULL  | cut -d',' -f\${PTH} \`
+  export PDGP=\`echo \$PROBELISTFULL  | cut -d',' -f\${PTH} \`
   case "\$PDGP" in
+     11 ) export NAMEP="electron" ;;
      12 ) export NAMEP="nue"      ;;
      14 ) export NAMEP="numu"     ;;
      16 ) export NAMEP="nutau"    ;;
+    -11 ) export NAMEP="positron" ;;
     -12 ) export NAMEP="nuebar"   ;;
     -14 ) export NAMEP="numubar"  ;;
     -16 ) export NAMEP="nutaubar" ;;
@@ -535,14 +549,6 @@ function create_isotopes_file()
 ## GENIE version isn't necessarily known at this point
 #  gmajor=`echo ${GXSPLVDOTS} | cut -d. -f1`
 #  gminor=`echo ${GXSPLVDOTS} | cut -d. -f2`
-#  if [ "${gmajor}" == 2 ]; then
-#    if [ "${gminor}" == 6 -o "${gminor}" == 8 ]; then export NOGDOPT="true"; fi
-#  fi
-
-  if [ -n "${NOGDOPT}" ]; then
-    export NOGDOPT="# exclude Gd isotopes "
-    echo -e "${OUTBLUE}${b0}: exclude Gd isotopes${OUTNOCOL}"
-  fi
 
   cat > isotopes.cfg <<EOF
 ##############################################################################
@@ -563,12 +569,12 @@ function create_isotopes_file()
   1000000010    free-n  100.       reduced  root
 #
 ### hydrogen
-  1000010010    H1     99.9885    reduced  root
-  1000010020    H2      0.0115    reduced  root
+  1000010010    H1     99.9885    reduced         electron
+  1000010020    H2      0.0115    reduced   root
 #
 ### helium   # skip He3
-# 1000020030   He3      0.000137
-  1000020040   He4     99.9999    reduced
+  1000020030   He3      0.000137                  electron
+  1000020040   He4     99.9999    reduced         electron
 #
 ### lithium  # skip all
 # 1000030060   Li6      7.59
@@ -582,7 +588,7 @@ function create_isotopes_file()
   1000050110   B11     80.1       reduced
 #
 ### carbon
-  1000060120   C12     98.93      reduced  root
+  1000060120   C12     98.93      reduced   root  electron
   1000060130   C13      1.07
 #
 ### nitrogen
@@ -644,7 +650,7 @@ function create_isotopes_file()
   1000190410   K41      6.7302
 #
 # calcium
-  1000200400  Ca40     96.941     reduced
+  1000200400  Ca40     96.941     reduced        electron
   1000200410  Ca41   -999.0
   1000200420  Ca42      0.647
   1000200430  Ca43      0.135
@@ -658,7 +664,7 @@ function create_isotopes_file()
 ### titanium
   1000220460  Ti46      8.25
   1000220470  Ti47      7.44
-  1000220480  Ti48     73.72      reduced  root
+  1000220480  Ti48     73.72      reduced  root  electron
   1000220490  Ti49      5.41
   1000220500  Ti50      5.18
 #
@@ -678,7 +684,7 @@ function create_isotopes_file()
 #
 ### iron
   1000260540  Fe54      5.845     reduced
-  1000260560  Fe56     91.754     reduced  root
+  1000260560  Fe56     91.754     reduced  root  electron
   1000260570  Fe57      2.119     reduced
   1000260580  Fe58      0.282     reduced
 #
@@ -761,13 +767,15 @@ function create_isotopes_file()
 # 1000400960  Zr96      2.8
 #
 ### niobium
-  1000410930  Nb93    100.
+# add this to reduced for ICARUS
+  1000410930  Nb93    100.        reduced
 #
 ### molybdenum
 # 1000420920  Mo92     14.84
 # 1000420940  Mo94      9.25
   1000420950  Mo95     15.92
-  1000420960  Mo96     16.68
+# add this to reduced for ICARUS
+  1000420960  Mo96     16.68      reduced
 # 1000420970  Mo97      9.55
 # 1000420980  Mo98     24.13
 # 1000421000 Mo100      9.63
@@ -919,8 +927,6 @@ function create_isotopes_file()
 # 1000631530 Eu153     52.19
 #
 ### gadolinium
-## Gd isotopes are not supported prior to R-2_9_0
-#use ${NOGDOPT}1000641520  Gd152
   1000641520 Gd152      0.2
   1000641540 Gd154      2.18
   1000641550 Gd155     14.8
@@ -1032,7 +1038,7 @@ function create_isotopes_file()
   1000822040 Pb204      1.4
   1000822060 Pb206     24.1
   1000822070 Pb207     22.1       reduced
-  1000822080 Pb208     52.4
+  1000822080 Pb208     52.4                      electron
 #
 ### bismuth
 # 1000832090 Bi209    100.
@@ -1380,7 +1386,7 @@ BEGIN {
   nlines=0; maxlines=0; # set non-zero maxlines only for testing puroses
 EOF
 echo "  # whether to keep each species of neutrino" >> ${AWKFILE}
-for p in `echo ${NULISTREDUCED} | tr ',' ' '`; do
+for p in `echo ${PROBELISTREDUCED} | tr ',' ' '`; do
   echo "  nukeep[${p}] = 1;   #" >> ${AWKFILE}
 done
 echo "  # whether to keep particular isotopes" >> ${AWKFILE}
@@ -1474,12 +1480,12 @@ function report_cfg()
   echo "   version ${GXSPLVERSION} qualifier ${GXSPLQUALIFIER}  (${GXSPLVDOTS})"
   echo "   ${KNOTS} knots  E_nu [${EMIN}:${EMAX}]"
   echo "   tune \"${TUNE}\" EventGeneratorList \"${EVENTGENERATORLIST}\""
-  ## echo "   probes full: ${NULISTFULL}   reduced: ${NULISTREDUCED}"
-  echo -n "   complete probe list (${NNU}): "
-  for p in `echo ${NULISTFULL} | tr ',' ' '` ; do echo -n " $p" ; done
+  ## echo "   probes full: ${PROBELISTFULL}   reduced: ${PROBELISTREDUCED}"
+  echo -n "   complete probe list (${NPROBE}): "
+  for p in `echo ${PROBELISTFULL} | tr ',' ' '` ; do echo -n " $p" ; done
   echo " "
   echo -n "   reduced probe list:      "
-  for p in `echo ${NULISTREDUCED} | tr ',' ' '` ; do echo -n " $p" ; done
+  for p in `echo ${PROBELISTREDUCED} | tr ',' ' '` ; do echo -n " $p" ; done
   echo " "
   echo "   number of isotopes: $NISOTOPES  (reduced ${NISOTOPESREDUCED})"
   #  echo ISOLISTFULL=$ISOLISTFULL
@@ -1549,15 +1555,15 @@ function print_status()
       fi
     done
   else
-    let NNUISOTOPEFILES=${NISOTOPES}*${NNU}
-    echo -e "${OUTBLUE}${b0}: stage3 generates ${NISOTOPES} x ${NNU} = ${NNUISOTOPEFILES} files ${OUTNOCOL}"
+    let NPROBEISOTOPEFILES=${NISOTOPES}*${NPROBE}
+    echo -e "${OUTBLUE}${b0}: stage3 generates ${NISOTOPES} x ${NPROBE} = ${NPROBEISOTOPEFILES} files ${OUTNOCOL}"
     stage3_status=0
     xlist3=""
     ith0=-1
     for ith in `seq 1 $NISOTOPES`
     do
       set_ith_isotope $ith
-      for pth in `seq 1 $NNU`
+      for pth in `seq 1 $NPROBE`
       do
         set_pth_probe $pth
         let ith0=${ith0}+1
@@ -1572,7 +1578,7 @@ function print_status()
     done
   fi
   if [ ${stage3_status} -ne 0 ]; then
-    echo -e "${b0}:${OUTRED} stage3 incomplete, missing ${stage3_status} of ${NNUISOTOPEFILES} files${OUTNOCOL}"
+    echo -e "${b0}:${OUTRED} stage3 incomplete, missing ${stage3_status} of ${NPROBEISOTOPEFILES} files${OUTNOCOL}"
     echo -e "${OUTRED}  suggest --run-stage 3 -s { $xlist3 } ${OUTNOCOL}"
     if [ ${SKIPSTAGE3CHECK} -eq 1 ]; then
       echo -e "${OUTYELLOW}==============================================================================================${OUTNOCOL}"
@@ -1775,7 +1781,7 @@ function generate_isotope()
 {
   echo -e "${OUTBLUE}${b0}: generate_isotope ${OUTNOCOL}"
   set_ith_isotope ${CURINSTANCE1}
-  ISOARGS="-t ${PDGI} -p ${NULISTFULL}"
+  ISOARGS="-t ${PDGI} -p ${PROBELISTFULL}"
   XML=${ISOFBASE}.xml
   LOG=${ISOFBASE}.log
   if [ -f $LOG ]; then rm $LOG; fi
@@ -1837,8 +1843,8 @@ function generate_isotope()
 function generate_isotope_split_nu()
 {
   echo -e "${OUTBLUE}${b0}: generate_isotope_split_nu ${OUTNOCOL}"
-  let ITHISOTOPE=(${CURINSTANCE}/${NNU})+1
-  let PTHNU=(${CURINSTANCE}%${NNU})+1
+  let ITHISOTOPE=(${CURINSTANCE}/${NPROBE})+1
+  let PTHNU=(${CURINSTANCE}%${NPROBE})+1
 #  set_ith_isotope ${CURINSTANCE1}
   set_ith_isotope ${ITHISOTOPE}
   set_pth_probe   ${PTHNU}
@@ -1891,8 +1897,8 @@ function generate_isotope_split_nu()
 }
 function combine_stage3()
 {
-  echo NULISTFULL=${NULISTFULL}
-  echo NULISTREDUCED=${NULISTREDUCED}
+  echo PROBELISTFULL=${PROBELISTFULL}
+  echo PROBELISTREDUCED=${PROBELISTREDUCED}
   echo ISOLISTFULL=${ISOLISTFULL}
   echo ISOLISTREDUCED=${ISOLISTREDUCED}
   echo ISOLISTTGRAPH=${ISOLISTTGRAPH}
@@ -1933,7 +1939,7 @@ function combine_stage3()
       # skip "./" as .gz makes arg char count 2179 (buffer 2048)
       FLIST="${FLIST}${THISFNAMENUSUM}.gz"   # note .gz
       FLISTISO=""
-      for pth in `seq 1 $NNU`
+      for pth in `seq 1 $NPROBE`
       do
         set_pth_probe $pth
         THISFNAME=gxspl-${NAMEP}-${NAMEI}.xml
@@ -2023,7 +2029,7 @@ function combine_stage3()
   let EMAXUSR=${EMAXUSR}+1
   if [ ${EMAXUSR} -lt ${EMAXTGRAPH} ]; then EMAXTGRAPH=${EMAXUSR} ; fi
 
-  export GSPL2ROOTARGS="--tune ${TUNE} -f ${XML} -p ${NULISTREDUCED} -t ${ISOLISTTGRAPH}"
+  export GSPL2ROOTARGS="--tune ${TUNE} -f ${XML} -p ${PROBELISTREDUCED} -t ${ISOLISTTGRAPH}"
   export GSPL2ROOTARGS="${GSPL2ROOTARGS} -e ${EMAXTGRAPH} -o ${GXSECTGRAPH}"
   if [ "${EVENTGENERATORLIST}" != "Default" ]; then
     export GSPL2ROOTARGS="${GSPL2ROOTARGS} --event-generator-list ${EVENTGENERATORLIST}"
@@ -2055,7 +2061,7 @@ echo -e "${OUTBLUE}${b0}: write_base_dag_file ${OUTNOCOL}"
 export DAG=genie_splines.dag
 echo "# DAG for ${GXSPLVERSION} {$GXSPLQUALIFIER}" > $DAG
 echo "# ${KNOTS} knots Enu [${EMIN}:${EMAX}] ${EVENTGENERATORLIST}" >> $DAG
-echo "# ${NNU} probes on ${NISOTOPES} isotopes" >> $DAG
+echo "# ${NPROBE} probes on ${NISOTOPES} isotopes" >> $DAG
 echo "# Split nu on isotopes = ${SPLITNUISOTOPES}" >> $DAG
 echo "# default JOUBSUB_GROUP=${JOBSUB_GROUP_ARG}" >> $DAG
 echo "#" >> $DAG
@@ -2064,7 +2070,7 @@ echo "<parallel>" >> $DAG
 # --expected-lifetime 3h,8h  85200s(=23.666hr)
 # -n is REQUIRED apparently (creates but doesn't submit job)
 jsdcmd="  jobsub_submit -n -g --group ${JOBSUB_GROUP_ARG} "
-jsdcmd="${jsdcmd} --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE "
+jsdcmd="${jsdcmd} --OS=SL6 --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC" # ,OFFSITE "
 #jsdcmd="${jsdcmd} --resource-provides=usage_model=OFFSITE "
 jsdcmd="${jsdcmd} --append_condor_requirements='(TARGET.HAS_CVMFS_dune_opensciencegrid_org==true)' "
 bigmem=" --memory=4095MB "
@@ -2088,7 +2094,7 @@ echo "</serial>" >> $DAG
 echo "<parallel>" >> $DAG
 NSTAGE3=${NISOTOPES}
 if [ ${SPLITNUISOTOPES} -ne 0 ]; then
-  let NSTAGE3=${NNU}*${NISOTOPES}
+  let NSTAGE3=${NPROBE}*${NISOTOPES}
 fi
 for ith in `seq 1 $NSTAGE3`; do
   let ith0=${ith}-1
@@ -2248,7 +2254,7 @@ cat > ${README} <<EOF
 GENIE XML Cross Section Spline files for
    version ${GXSPLVERSION} qualifier ${GXSPLQUALIFIER}
    using the "${TUNE}" tune, and "${EVENTGENERATORLIST}" TuneGeneratorList
-   neutrino energies ${EMIN} GeV to ${EMAX} GeV, with ${NNU} nu flavors
+   neutrino energies ${EMIN} GeV to ${EMAX} GeV, with ${NPROBE} nu flavors
    ${KNOTS} knots, spaced logarithmically
 
 Files:
@@ -2275,7 +2281,7 @@ Creating new spline files from the "big" file:
 
 ${FULLFNAME}.xml contains cross sections on the following neutrino flavors:
 EOF
-for pth in `seq 1 ${NNU}`; do
+for pth in `seq 1 ${NPROBE}`; do
   set_pth_probe $pth
   printf "   %3d  %-10s\n" $PDGP "$NAMEP"  >> ${README}
 done
@@ -2302,7 +2308,7 @@ cat >> ${README} <<EOF
 
 ${REDUCEDFNAME}.xml contains:
 EOF
-NTMP="`echo $NULISTREDUCED | tr , ' '`"
+NTMP="`echo $PROBELISTREDUCED | tr , ' '`"
 echo "neutrino flavors: ${NTMP}" >> ${README}
 echo "and a more limited list of ${NISOTOPESREDUCED} isotopes: " >> ${README}
 NAMEILAST=""
@@ -2354,11 +2360,10 @@ if [ -n "$PROCESS" ]; then CURINSTANCE=$PROCESS ; fi
 # functions in bash can't easily pass in/out bash style arrays
 # so instead use a single variable with ":" separated values as the
 # exchange medium
-export NULISTFULL=""
-export NULISTREDUCED=""
+export PROBELISTFULL=""
+export PROBELISTREDUCED=""
 
 export KNOTS="unset"
-export NOGDOPT=""  # set to non-blank for pre-2_9_0
 
 export SPLITNUISOTOPES=0  # do all nu flavors together in isotopes
 # some values for initialization stage
@@ -2366,6 +2371,7 @@ export INITKNOTS="500"
 export INITEMAX="400"
 export INITTUNE=""
 export INITGENLIST="Default"
+export INITDOELECTRON=0
 
 export  INITSETUPSTR="ups:genie%v3_XX%e17:r6:prof:rhatcher"
 #export INITGENIEV="v2_8_6b"
@@ -2398,7 +2404,7 @@ process_args() {
   # use this for targfile lowth peanut
   TEMP=`getopt -n $0 -s bash -a \
      --longoptions="help verbose top: version: qualifier: setup: init rewrite split-nu-isotopes \
-     knots: emax: tune: genlist: no-Gd run-stage: subprocess: instance: status finalize-cfg:: \
+     knots: emax: tune: genlist: electron run-stage: subprocess: instance: status finalize-cfg:: \
      launch-dag:: skip-stage3-check keep-scratch morehelp debug trace" \
      -o hvT:V:Q:ir:s:-: -- "$@" `
 # remove "ups genie-v: genie-q:", replace w/ "setup:"
@@ -2431,7 +2437,7 @@ process_args() {
            --emax         ) export INITEMAX="$2";       shift  ;;
            --tune         ) export INITTUNE="$2";       shift  ;;
            --genlist      ) export INITGENLIST="$2";    shift  ;;
-           --no-Gd        ) export NOGDOPT="true"              ;;
+           --electron     ) export INITDOELECTRON=1;    ;;
            --finalize-cfg ) export DOFINALIZECFG=1
                             # optional arg :: (blank if not given)
                             JSG_ARG1="$2";              shift  ;;
@@ -2456,6 +2462,9 @@ process_args() {
 
   # convert spaces to underscore in version/qualifier
   export GXSPLVERSION=`echo ${GXSPLVERSION}     | tr ' ' '_' `
+  if [ ${INITDOELECTRON} -eq 1 ]; then
+     export GXSPLQUALIFIER="${GXSPLQUALIFIER}:electron"
+  fi
   export GXSPLQUALIFIER=`echo ${GXSPLQUALIFIER} | tr ' ' '_' `
   export GXSPLQUALIFIERDASHES=`echo ${GXSPLQUALIFIER} | tr ':' '-' `
   # must have OUTPUTTOP, GXSPLVERSION, GXSKPLQUALIFIER set
