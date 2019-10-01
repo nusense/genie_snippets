@@ -69,6 +69,8 @@ Initialization step uses the flags:
                             optionally import XML files (e.g. such as
                             UserPhysicsOptions.xml and/or
                             EventGeneratorListAssembler.xml)
+      --fetch-tune-from <path>   look for, copy directory from this path
+
     optional:
 
       --rewrite             Allow init to overwrite existing config files
@@ -88,6 +90,8 @@ Initialization step uses the flags:
       --electron              [${DOELECTRON}]    do electron scattering instead of neutrinos
 
       --split-nu-isotopes     [${SPLITNUISOTOPES}]  when doing isotopes run single nu flavors
+
+      --fetch-tune-from       [${FETCHTUNEFROM}]    fetch custom tune info from path
 
       --skip-stage3-check     DANGER: do NOT do this without very good cause
       --keep-scratch          don't do cleanup of fake_CONDOR_SCRATCH on non-worker node
@@ -218,14 +222,18 @@ function define_cfg()
   export KNOTS=${INITKNOTS}
   export EMIN=0.01    # (ignored by gxspl)
   export EMAX=${INITEMAX}
-  export SPLITNUISOTOPES=${SPLITNUISOTOPES}
+
   export ELECTRONPROBE=${INITDOELECTRON}
+  export SPLITNUISOTOPES=${SPLITNUISOTOPES}
 
   # collection of event generator process to calculate
-  #   (see:  \$GENIE/config/${INITTUNE}/TuneGeneratorList.xml )
+  #   (see:  \$GENIE/config/${INITTUNECMC}/TuneGeneratorList.xml )
   #
   export TUNE="${INITTUNE}"                   # model config / tune name
+  export TUNECMC="${INITTUNECMC}"             # comprehensive model config
   export EVENTGENERATORLIST="${INITGENLIST}"  # normally "Default"
+
+  export CUSTOMTUNE=${CUSTOMTUNE}
 
   # scisoft tarball distribution expects files names of the form
   #   genie_xsec-2.9.0-noarch-default.tar.bz2
@@ -239,7 +247,12 @@ function define_cfg()
   #       complete set of all generated combinations of nu flavor & isotopes
   #    gxspl-\${GXSPLBASE}\${GXSPLREDUCEDNAME}.xml
   #       reduced set from the former containing only necessary combinations
-  export GXSPLBASE="FNAL"
+
+  if [ \${ELECTRONPROBE} -eq 0 ]; then
+    export GXSPLBASE="NU"
+  else
+    export GXSPLBASE="ELECTRON"
+  fi
   export GXSPLFULLNAME="big"
   export GXSPLREDUCEDNAME="small"
 
@@ -1668,6 +1681,15 @@ function init_output_area()
     cp $f ${OUTPUTDIR}/cfg/$bname
   done
 
+  # copy any custom tune
+  if [ ${CUSTOMTUNE} -ne 0 ]; then
+    FIRSTCHAR=`echo ${FETCHTUNEFROM} | cut -c1`
+    if [ "$FIRSTCHAR" == "." ]; then
+      FETCHTUNEFROM="${ORIGINALDIR}/${FETCHTUNEFROM}"
+    fi
+    cp -va ${FETCHTUNEFROM}/${INITTUNECMC} ${OUTPUTDIR}/cfg/
+  fi
+
   for f in $THISFILE
   do
     if [ ! -f $f ]; then f=$ORIGINALDIR/$f; fi
@@ -2114,8 +2136,19 @@ function make_cfg_tar()
 echo -e "${OUTBLUE}${b0}: make_cfg_tar ${OUTNOCOL}"
 HERE=`pwd`
 cd ${OUTPUTDIR}/cfg
+echo -e  "${OUTYELLOW} RWH --- HERE is set to ${HERE} ${OUTNOCOL}"
+echo -e  "${OUTYELLOW} RWH --- pwd is  `pwd` ${OUTNOCOL}"
 export GZIP="-9"
 xmllist=`ls *.xml 2>/dev/null `
+# pull in custom CMC directory if present
+echo -e  "${OUTYELLOW} RWH --- FETCHTUNEFROM=${FETCHTUNEFROM} ${CUSTOMTUNE} ${INITTUNECMC} ${OUTNOCOL}"
+if [ -d ${INITTUNECMC} ]; then
+  echo -e  "${OUTYELLOW} RWH --- add INITTUNECMC ${OUTNOCOL}"
+  xmllist="$xmllist ${INITTUNECMC}"
+else
+  echo -e  "${OUTYELLOW} RWH --- no INITTUNECMC ${INITTUNECMC} in `pwd` ${OUTNOCOL}"
+fi
+echo -e "${OUTYELLOW} RWH tar cfz ${HERE}/cfg.tar.gz *.sh *.cfg $xmllist ${OUTNOCOL}"
 tar cfz ${HERE}/cfg.tar.gz *.sh *.cfg $xmllist
 cd ${HERE}
 cp cfg.tar.gz ${OUTPUTDIR}/cfg/cfg.tar.gz
@@ -2144,7 +2177,7 @@ ${MYCP} ${OUTPUTDIR}/cfg/isotopes.cfg  ${GXSPLVPATH}/data/isotopes.cfg
 
 # this won't work on /pnfs ?? ...
 
-# copy XMLs being used should be already unpacked there
+# copy XMLs being used; should be already unpacked into working directory
 for xml in ${_CONDOR_SCRATCH_DIR}/*.xml
 do
   if [ "$xml" == "${_CONDOR_SCRATCH_DIR}/*.xml" ]; then break; fi  # no XML files
@@ -2152,6 +2185,10 @@ do
   echo -e "${OUTBLUE}${b0}: copy config ${xml} ${OUTNOCOL}"
   ${MYCP} ${xml} ${GXSPLVPATH}/data/${xmlbase}
 done
+# copy directory if it matches CMC name
+if [ -d "${_CONDOR_SCRATCH_DIR}/${TUNECMC}" ]; then
+  cp -va ${_CONDOR_SCRATCH_DIR}/${TUNECMC} ${GXSPLVPATH}/data
+fi
 
 # this won't work on /pnfs ??
 echo -e "${OUTBLUE}${b0}: create_ups compress gxspl-freenuc.xml ${OUTNOCOL}"
@@ -2159,6 +2196,12 @@ gzip -9 ${GXSPLVPATH}/data/gxspl-freenuc.xml
 
 echo -e "${OUTBLUE}${b0}: create_ups compress ${FULLFNAME}.xml ${OUTNOCOL}"
 gzip -9 ${GXSPLVPATH}/data/${FULLFNAME}.xml
+HEREUPS=`pwd`
+cd ${GXSPLVPATH}/data
+   # make symlinks to old names
+   ln -s ${FULLFNAME}.xml.gz gxspl-FNALbig.xml.gz
+   ln -s ${REDUCEDFNAME}.xml gxspl-FNALsmall.xml
+cd ${HEREUPS}
 
 tableFile=${GXSPLVPATH}/ups/genie_xsec.table
 versionFile=genie_xsec/${GXSPLVERSION}.version/NULL_${GXSPLQUALIFIERDASHES}
@@ -2327,7 +2370,8 @@ echo ""               >> ${README}
 
 #  tar cvjf genie_xsec-2.9.0-noarch-default.tar.bz2 genie_xsec/v2_9_0 genie_xsec/v2_9_0.version
 echo -e "${OUTBLUE}${b0}: create_ups start making ${UPSTARFILE} ${OUTNOCOL}"
-tar -cjf ${UPSTARFILE} genie_xsec/${GXSPLVERSION} genie_xsec/${GXSPLVERSION}.version
+echo -e "${OUTYELLOW}tar -cvjf ${UPSTARFILE} genie_xsec/${GXSPLVERSION} genie_xsec/${GXSPLVERSION}.version ${OUTNOCOL}"
+tar -cvjf ${UPSTARFILE} genie_xsec/${GXSPLVERSION} genie_xsec/${GXSPLVERSION}.version
 
 ${MYCP} ${UPSTARFILE} ${OUTPUTDIR}/ups/${UPSTARFILE}
 echo -e "${OUTBLUE}${b0}: create_ups complete ${OUTNOCOL}"
@@ -2372,6 +2416,8 @@ export INITEMAX="400"
 export INITTUNE=""
 export INITGENLIST="Default"
 export INITDOELECTRON=0
+export CUSTOMTUNE=0
+export FETCHTUNEFROM=""
 
 export  INITSETUPSTR="ups:genie%v3_XX%e17:r6:prof:rhatcher"
 #export INITGENIEV="v2_8_6b"
@@ -2404,7 +2450,7 @@ process_args() {
   # use this for targfile lowth peanut
   TEMP=`getopt -n $0 -s bash -a \
      --longoptions="help verbose top: version: qualifier: setup: init rewrite split-nu-isotopes \
-     knots: emax: tune: genlist: electron run-stage: subprocess: instance: status finalize-cfg:: \
+     knots: emax: tune: genlist: electron fetch-tune-from: run-stage: subprocess: instance: status finalize-cfg:: \
      launch-dag:: skip-stage3-check keep-scratch morehelp debug trace" \
      -o hvT:V:Q:ir:s:-: -- "$@" `
 # remove "ups genie-v: genie-q:", replace w/ "setup:"
@@ -2438,6 +2484,7 @@ process_args() {
            --tune         ) export INITTUNE="$2";       shift  ;;
            --genlist      ) export INITGENLIST="$2";    shift  ;;
            --electron     ) export INITDOELECTRON=1;    ;;
+           --fetch-tune-from ) export FETCHTUNEFROM="$2"; shift ;;
            --finalize-cfg ) export DOFINALIZECFG=1
                             # optional arg :: (blank if not given)
                             JSG_ARG1="$2";              shift  ;;
@@ -2459,6 +2506,21 @@ process_args() {
      shift  # eat up the arg we just used
   done
   usage_exit=0
+
+  INITTUNECMC=`echo ${INITTUNE} | cut -d_ -f1-2`
+  # custom tune
+  if [ -n "${FETCHTUNEFROM}" ]; then
+    CUSTOMTUNE=1
+    if [ ! -d "${FETCHTUNEFROM}/${INITTUNECMC}" ]; then
+      # did user include tune name with path?
+      FETCHTUNEFROMBASE=`basename ${FETCHTUNEFROM}`
+      FETCHTUNEFROMDIR=`dirname ${FETCHTUNEFROM}`
+      if [ "${FETCHTUNEFROMBASE}" == "${INITTUNECMC}" ]; then
+        FETCHTUNEFROM="${FETCHTUNEFROMDIR}"
+      fi
+    fi
+  fi
+  echo -e  "${OUTYELLOW} RWH --- FETCHTUNEFROM=${FETCHTUNEFROM} ${CUSTOMTUNE} ${OUTNOCOL}"
 
   # convert spaces to underscore in version/qualifier
   export GXSPLVERSION=`echo ${GXSPLVERSION}     | tr ' ' '_' `
@@ -2546,6 +2608,7 @@ process_args() {
 }
 ##############################################################################
 ##############################################################################
+
 process_args "$@"
 
 # make sure we're in a scratch area
@@ -2722,7 +2785,8 @@ else
       GMKSPLARGS="${GMKSPLARGS} --event-generator-list ${EVENTGENERATORLIST}"
     fi
 
-    export GXMLPATH="`pwd`:$GXMLPATH:."
+    #export GXMLPATH="`pwd`:$GXMLPATH:."
+    export GXMLPATH=".:$GXMLPATH:."
     unset GSPLINE_DIR
     unset GSPLOAD
 
