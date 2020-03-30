@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 export THISFILE="$0"
 export b0=`basename $0`
-export GEN_GENIE_SPLINE_VERSION=2019-09-25
+export GEN_GENIE_SPLINE_VERSION=2019-11-26
 echo -e "${OUTRED}GEN_GENIE_SPLINE_VERSION ${GEN_GENIE_SPLINE_VERSION} ${OUTNOCOL}"
 
 export IFDHC_VERSION="" # "v2_3_9"  # usually "" default to v2_1_0 currently
@@ -1000,11 +1000,11 @@ function create_isotopes_file()
 # 1000731810 Ta181     99.988
 #
 ### tungsten
-# 1000741800  W180      0.12
-# 1000741820  W182     26.5
-# 1000741830  W183     14.31
-# 1000741840  W184     30.64
-# 1000741860  W186     28.43
+  1000741800  W180      0.12
+  1000741820  W182     26.5
+  1000741830  W183     14.31
+  1000741840  W184     30.64     reduced
+  1000741860  W186     28.43
 #
 ### rhenium
 # 1000751850 Re185     37.4
@@ -1032,7 +1032,7 @@ function create_isotopes_file()
 # 1000781920 Pt192      7.163
 #
 ### gold
-# 1000791970 Au197    100.
+  1000791970 Au197    100.       reduced
 #
 ### mercury
 # 1000801960 Hg196      0.15
@@ -1684,7 +1684,7 @@ function init_output_area()
   # copy any custom tune
   if [ ${CUSTOMTUNE} -ne 0 ]; then
     FIRSTCHAR=`echo ${FETCHTUNEFROM} | cut -c1`
-    if [ "$FIRSTCHAR" == "." ]; then
+    if [ "$FIRSTCHAR" == "." -o "$FIRSTCHAR" != "/" ]; then
       FETCHTUNEFROM="${ORIGINALDIR}/${FETCHTUNEFROM}"
     fi
     cp -va ${FETCHTUNEFROM}/${INITTUNECMC} ${OUTPUTDIR}/cfg/
