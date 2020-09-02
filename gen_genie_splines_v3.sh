@@ -579,10 +579,10 @@ function create_isotopes_file()
 ##############################################################################
 #
 ### neutron
-  1000000010    free-n  100.       reduced  root
+  1000000010    free-n  100.      reduced   root
 #
 ### hydrogen
-  1000010010    H1     99.9885    reduced         electron
+  1000010010    H1     99.9885    reduced   root  electron
   1000010020    H2      0.0115    reduced   root
 #
 ### helium   # skip He3
@@ -601,7 +601,7 @@ function create_isotopes_file()
   1000050110   B11     80.1       reduced
 #
 ### carbon
-  1000060120   C12     98.93      reduced   root  electron
+  1000060120   C12     98.93      reduced  root  electron
   1000060130   C13      1.07
 #
 ### nitrogen
@@ -719,6 +719,7 @@ function create_isotopes_file()
 #
 ### zinc
   1000300640  Zn64     48.63      reduced
+  1000300650  Zn65   -999.0       reduced
   1000300660  Zn66     27.9
   1000300670  Zn67      4.1
   1000300680  Zn68     18.75
@@ -2092,7 +2093,7 @@ echo "<parallel>" >> $DAG
 # --expected-lifetime 3h,8h  85200s(=23.666hr)
 # -n is REQUIRED apparently (creates but doesn't submit job)
 jsdcmd="  jobsub_submit -n -g --group ${JOBSUB_GROUP_ARG} "
-jsdcmd="${jsdcmd} --OS=SL6 --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC" # ,OFFSITE "
+jsdcmd="${jsdcmd} --OS=SL7 --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC" # ,OFFSITE "
 #jsdcmd="${jsdcmd} --resource-provides=usage_model=OFFSITE "
 jsdcmd="${jsdcmd} --append_condor_requirements='(TARGET.HAS_CVMFS_dune_opensciencegrid_org==true)' "
 bigmem=" --memory=4095MB "
