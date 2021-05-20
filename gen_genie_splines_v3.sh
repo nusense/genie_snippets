@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 export THISFILE="$0"
 export b0=`basename $0`
-export GEN_GENIE_SPLINE_VERSION=2019-11-26
+export GEN_GENIE_SPLINE_VERSION=2021-05-20
 echo -e "${OUTRED}GEN_GENIE_SPLINE_VERSION ${GEN_GENIE_SPLINE_VERSION} ${OUTNOCOL}"
 
 export IFDHC_VERSION="" # "v2_3_9"  # usually "" default to v2_1_0 currently
@@ -753,12 +753,13 @@ function create_isotopes_file()
   1000350810  Br81     49.31
 #
 ### krypton
-# 1000360780  Kr78      0.35
-# 1000360800  Kr80      2.28
-# 1000360820  Kr82     11.58
-# 1000360830  Kr83     11.49
-# 1000360840  Kr84     57.0
-# 1000360860  Kr86     17.3
+### enable for NA62
+  1000360780  Kr78      0.35
+  1000360800  Kr80      2.28
+  1000360820  Kr82     11.58
+  1000360830  Kr83     11.49
+  1000360840  Kr84     57.0
+  1000360860  Kr86     17.3
 #
 ### rubidium
 # 1000370850  Rb85     72.17
@@ -1179,6 +1180,10 @@ function setup_genie()
 
   echo "setup_genie: setup genie \$version -q \$qualifier"
                      setup genie \$version -q \$qualifier
+
+  # grid nodes mssing libxxhash.so and libzstd.so
+  echo "setup_genie: setup auxlibs v1_00 -q slf7"
+                     setup auxlibs v1_00 -q slf7
 
 }
 ##############################################################################
