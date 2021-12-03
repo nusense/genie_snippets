@@ -622,23 +622,23 @@ function create_isotopes_file()
 # 1000100220  Ne22      9.25
 #
 ### sodium
-  1000110230  Na23    100.        reduced
+  1000110230  Na23    100.        reduced  root
 #
 ### magnesium
-  1000120240  Mg24     78.99      reduced
+  1000120240  Mg24     78.99      reduced  root
   1000120250  Mg25     10.0
   1000120260  Mg26     11.01
 #
 ### aluminum
-  1000130270  Al27    100.        reduced
+  1000130270  Al27    100.        reduced  root
 #
 ### silicon
-  1000140280  Si28     92.2297    reduced
+  1000140280  Si28     92.2297    reduced  root
   1000140290  Si29      4.6832
   1000140300  Si30      3.0872
 #
 ### phosphorus
-  1000150310  P31     100.        reduced
+  1000150310  P31     100.        reduced  root
 #
 ### sulfur  # skip 36
   1000160320   S32     94.93      reduced  root
@@ -663,7 +663,7 @@ function create_isotopes_file()
   1000190410   K41      6.7302
 #
 # calcium
-  1000200400  Ca40     96.941     reduced        electron
+  1000200400  Ca40     96.941     reduced  root  electron
   1000200410  Ca41   -999.0
   1000200420  Ca42      0.647
   1000200430  Ca43      0.135
@@ -693,7 +693,7 @@ function create_isotopes_file()
   1000240540  Cr54      2.365
 #
 ### manganese
-  1000250550  Mn55    100.        reduced
+  1000250550  Mn55    100.        reduced  root
 #
 ### iron
   1000260540  Fe54      5.845     reduced
@@ -714,7 +714,7 @@ function create_isotopes_file()
 #
 ### copper
   1000290630  Cu63     69.17      reduced
-  1000290640  Cu64   -999.0       reduced
+  1000290640  Cu64   -999.0       reduced  root
   1000290650  Cu65     30.83      reduced
 #
 ### zinc
@@ -758,7 +758,7 @@ function create_isotopes_file()
   1000360800  Kr80      2.28
   1000360820  Kr82     11.58
   1000360830  Kr83     11.49
-  1000360840  Kr84     57.0
+  1000360840  Kr84     57.0       reduced
   1000360860  Kr86     17.3
 #
 ### rubidium
@@ -854,7 +854,7 @@ function create_isotopes_file()
   1000501160 Sn116     14.54
   1000501170 Sn117      7.68
   1000501180 Sn118     24.22
-  1000501190 Sn119      8.59      reduced
+  1000501190 Sn119      8.59      reduced  root
   1000501200 Sn120     32.58
 # 1000501220 Sn122      4.63
 # 1000501240 Sn124      5.79
@@ -1004,7 +1004,7 @@ function create_isotopes_file()
 ### tungsten
   1000741800  W180      0.12
   1000741820  W182     26.5
-  1000741830  W183     14.31
+  1000741830  W183     14.31     reduced
   1000741840  W184     30.64     reduced
   1000741860  W186     28.43
 #
@@ -2679,7 +2679,7 @@ else
 ###### can't ^ because PNFS not readable on grid
 ###  ${MYCP} ${OUTPUTDIR}/cfg/cfg.tar.gz cfg.tar.gz
 ###### can't ^ because ifdh has not been setup (cf. the setup )
-  echo "----- chicken & egg copy of cfg.tar.gz"
+  echo "----- chicken & egg copy of cfg.tar.gz from ${OUTPUTDIR}/cfg/"
   if [ -f ${OUTPUTDIR}/cfg/cfg.tar.gz ]; then
     echo -e "${OUTRED}${b0}: cp ${OUTPUTDIR}/cfg/cfg.tar.gz cfg.tar.gz ${OUTNOCOL}"
     cp ${OUTPUTDIR}/cfg/cfg.tar.gz cfg.tar.gz
