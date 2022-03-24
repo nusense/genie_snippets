@@ -655,7 +655,7 @@ function create_isotopes_file()
   1000180360  Ar36      0.3365
   1000180380  Ar38      0.0632
   1000180390  Ar39   -999.0
-  1000180400  Ar40     99.6003    reduced  root
+  1000180400  Ar40     99.6003    reduced  root  electron
 #
 ### potassium
   1000190390   K39     93.2581    reduced
@@ -1592,6 +1592,12 @@ function print_status()
           xlist3="${xlist3} ${ith0}"
           xyzzy=`printf "   %3d => %25s -p %3d -t %d" $ith0 gxspl-${NAMEP}-${NAMEI}.xml ${PDGP} ${PDGI} `
           echo -e "${OUTRED} ${xyzzy} ${OUTNOCOL}"
+        else
+          if [ $VERBOSE -gt 0 ]; then
+            let ith0=${ith}-1
+            xyzzy=`printf "   %3d => %25s  -t %d" $ith0 gxspl-${NAMEI}.xml ${PDGI} `
+            echo -e "${OUTGREEN} ${xyzzy} ${OUTNOCOL}"
+          fi
         fi
       done
     done
@@ -1990,6 +1996,15 @@ function combine_stage3()
         # save char no "./"
         FLISTISO="${FLISTISO}${THISFNAME}"
       done
+      if [ $NPROBE -eq 1 ]; then
+        # gspladd needs TWO files
+        echo '<?xml version="1.0" encoding="ISO-8859-1"?>'         > fake.xml
+        echo '<genie_xsec_spline_list version="3.00" uselog="1">' >> fake.xml
+        echo "<genie_tune name=\"${TUNE}\">"                      >> fake.xml
+        echo '</genie_tune>'                                      >> fake.xml
+        echo '</genie_xsec_spline_list>'                          >> fake.xml
+        FLISTISO=${FLISTISO},fake.xml
+      fi
 
       # do partial sums over probes ...
       echo time gspladd -f ${FLISTISO} -o ${THISFNAMENUSUM}
