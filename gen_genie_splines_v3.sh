@@ -1593,10 +1593,12 @@ function print_status()
           xyzzy=`printf "   %3d => %25s -p %3d -t %d" $ith0 gxspl-${NAMEP}-${NAMEI}.xml ${PDGP} ${PDGI} `
           echo -e "${OUTRED} ${xyzzy} ${OUTNOCOL}"
         else
-          if [ $VERBOSE -gt 0 ]; then
-            let ith0=${ith}-1
-            xyzzy=`printf "   %3d => %25s  -t %d" $ith0 gxspl-${NAMEI}.xml ${PDGI} `
+          if [ $VERBOSE -gt 1 ]; then
+            xyzzy=`printf "   %3d => %25s -p %3d -t %d" $ith0 gxspl-${NAMEP}-${NAMEI}.xml ${PDGP} ${PDGI} `
             echo -e "${OUTGREEN} ${xyzzy} ${OUTNOCOL}"
+#            let ith0=${ith}-1
+#            xyzzy=`printf "   %3d => %25s  -t %d" $ith0 gxspl-${NAMEI}.xml ${PDGI} `
+#            echo -e "${OUTGREEN} ${xyzzy} ${OUTNOCOL}"
           fi
         fi
       done
