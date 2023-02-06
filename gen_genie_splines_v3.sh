@@ -2114,7 +2114,7 @@ echo "#" >> $DAG
 echo "<parallel>" >> $DAG
 # --expected-lifetime 3h,8h  85200s(=23.666hr)
 # -n is REQUIRED apparently (creates but doesn't submit job)
-jsdcmd="  jobsub_submit -n -g --group ${JOBSUB_GROUP_ARG} "
+jsdcmd="  jobsub_submit --group ${JOBSUB_GROUP_ARG} "
 jsdcmd="${jsdcmd} --OS=SL7 --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC" # ,OFFSITE "
 #jsdcmd="${jsdcmd} --resource-provides=usage_model=OFFSITE "
 jsdcmd="${jsdcmd} --append_condor_requirements='(TARGET.HAS_CVMFS_dune_opensciencegrid_org==true)' "
@@ -2780,7 +2780,9 @@ else
       cat genie_splines.${JOBSUB_GROUP_ARG}.dag
     fi
     # --generate-email-summary doesn't seem to be an option
-    JSDAGCMD="jobsub_submit_dag --group ${JOBSUB_GROUP_ARG} file://`pwd`/genie_splines.${JOBSUB_GROUP_ARG}.dag"
+    #JSDAGCMD="jobsub_submit_dag --group ${JOBSUB_GROUP_ARG} file://`pwd`/genie_splines.${JOBSUB_GROUP_ARG}.dag"
+    #JSDAGCMD="jobsub_submit --group ${JOBSUB_GROUP_ARG} --dag file://`pwd`/genie_splines.${JOBSUB_GROUP_ARG}.dag"
+    JSDAGCMD="jobsub_submit --group ${JOBSUB_GROUP_ARG} --dag file:///${OUTPUTDIR}/cfg/genie_splines.dag"
     echo -e "${OUTPURPLE} ${JSDAGCMD} ${OUTNOCOL}"
     NOWTXT=`date "+%Y%m%d_%H%M%S"`
     JSLOG=${ORIGINALDIR}/jobsub_submit_dag-${NOWTXT}.log
