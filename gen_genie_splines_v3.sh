@@ -515,6 +515,10 @@ function get_local_copy () {
    if [ \$# -gt 1 ]; then failokay=\$2 ; fi
    fullpath=\${OUTPUTDIR}/\${leafpath}
    localfile=\`basename \${fullpath}\`
+   if [ -f \${localfile} ]; then
+     echo "get_local_copy \${localfile} already exists"
+     return 0
+   fi
 
    if [[ -n "\${VERBOSE}" && \${VERBOSE} -gt 0 ]]; then
      echo "get_local_copy pwd \`pwd\`"
@@ -1483,6 +1487,7 @@ function report_node_info()
   echo "   user `id`"
   echo "   uname `uname -a`"
   echo "   PWD=`pwd`"
+  echo "   _CONDOR_SCRATCH_DIR=${_CONDOR_SCRATCH_DIR}"
   echo " "
 }
 function report_setup()
@@ -2103,13 +2108,14 @@ function write_base_dag_file()
 {
 echo -e "${OUTBLUE}${b0}: write_base_dag_file ${OUTNOCOL}"
 
+export DAGREADME=genie_splines.dag.readme
 export DAG=genie_splines.dag
-echo "# DAG for ${GXSPLVERSION} {$GXSPLQUALIFIER}" > $DAG
-echo "# ${KNOTS} knots Enu [${EMIN}:${EMAX}] ${EVENTGENERATORLIST}" >> $DAG
-echo "# ${NPROBE} probes on ${NISOTOPES} isotopes" >> $DAG
-echo "# Split nu on isotopes = ${SPLITNUISOTOPES}" >> $DAG
-echo "# default JOUBSUB_GROUP=${JOBSUB_GROUP_ARG}" >> $DAG
-echo "#" >> $DAG
+echo "# DAG for ${GXSPLVERSION} {$GXSPLQUALIFIER}" > $DAGREADME
+echo "# ${KNOTS} knots Enu [${EMIN}:${EMAX}] ${EVENTGENERATORLIST}" >> $DAGREADME
+echo "# ${NPROBE} probes on ${NISOTOPES} isotopes" >> $DAGREADME
+echo "# Split nu on isotopes = ${SPLITNUISOTOPES}" >> $DAGREADME
+echo "# default JOUBSUB_GROUP=${JOBSUB_GROUP_ARG}" >> $DAGREADME
+echo "#" >> $DAGREADME
 
 echo "<parallel>" >> $DAG
 # --expected-lifetime 3h,8h  85200s(=23.666hr)
@@ -2123,17 +2129,19 @@ shortt=" --expected-lifetime 3h"
 mediumt=" --expected-lifetime 8h"
 longt=" --expected-lifetime 85200s"
 superlongt=" --expected-lifetime 170400s"  # ~2 days
+normald=" --disk 2GB"
+bigd=" --disk 10GB"
 basic=" file://${OUTPUTDIR}/bin/gen_genie_splines_v3.sh --top ${OUTPUTTOP} --version ${GXSPLVERSION} --qualifier ${GXSPLQUALIFIER}"
 
 
 for fth in `seq 1 $NFREENUCPAIRS`; do
   let fth0=${fth}-1
-  echo "  ${jsdcmd} ${longt} ${basic} --run-stage 1 --subprocess $fth0" >> $DAG
+  echo "  ${jsdcmd} ${longt} ${normald} ${basic} --run-stage 1 --subprocess $fth0" >> $DAG
 done
 echo "</parallel>" >> $DAG
 
 echo "<serial>" >> $DAG
-echo "  ${jsdcmd} ${shortt} ${basic} --run-stage 2" >> $DAG
+echo "  ${jsdcmd} ${shortt} ${normald} ${basic} --run-stage 2" >> $DAG
 echo "</serial>" >> $DAG
 
 echo "<parallel>" >> $DAG
@@ -2143,13 +2151,13 @@ if [ ${SPLITNUISOTOPES} -ne 0 ]; then
 fi
 for ith in `seq 1 $NSTAGE3`; do
   let ith0=${ith}-1
-  echo "  ${jsdcmd} ${superlongt} ${basic} --run-stage 3 --subprocess $ith0" >> $DAG
+  echo "  ${jsdcmd} ${superlongt} ${normald} ${basic} --run-stage 3 --subprocess $ith0" >> $DAG
 done
 echo "</parallel>" >> $DAG
 
 echo "<serial>" >> $DAG
-echo "  ${jsdcmd} ${bigmem} ${shortt} ${basic} --run-stage 4" >> $DAG
-echo "  ${jsdcmd} ${bigmem} ${shortt} ${basic} --run-stage 5" >> $DAG
+echo "  ${jsdcmd} ${bigmem} ${shortt} ${bigd} ${basic} --run-stage 4" >> $DAG
+echo "  ${jsdcmd} ${bigmem} ${shortt} ${bigd} ${basic} --run-stage 5" >> $DAG
 echo "</serial>" >> $DAG
 
 cp ${DAG} $OUTPUTDIR/cfg/${DAG}
@@ -2600,7 +2608,7 @@ process_args() {
     if [ -z "${JOBSUB_GROUP_ARG}" ]; then
       if [ -f ${OUTPUTDIR}/cfg/genie_splines.dag ]; then
         # should have one locally from unpacked cfg.tar.gz
-        export JOBSUB_GROUP_ARG=`grep "default JOBSUB_GROUP" genie_splines.dag | cut -d= -f2`
+        export JOBSUB_GROUP_ARG=`grep "default JOBSUB_GROUP" genie_splines.dag.readme | cut -d= -f2`
         JSGSRC=dag
       fi
     fi
@@ -2667,7 +2675,15 @@ if [ ! -d ${_CONDOR_SCRATCH_DIR} ]; then
   echo -e "${OUTLTRED}no directory ${_CONDOR_SCRATCH_DIR}${OUTNOCOL}"
   exit 42
 fi
+
+report_node_info
+
+printenv | sort
+
+echo -e "${OUTRED}pwd=`pwd` ${OUTNOCOL}"
+echo -e "${OUTRED}cd ${_CONDOR_SCRATCH_DIR} ${OUTNOCOL}"
 cd ${_CONDOR_SCRATCH_DIR}
+ls -l
 
 echo -e "${OUTPURPLE}${b0}: pwd=`pwd` ${OUTNOCOL}"
 
@@ -2711,13 +2727,19 @@ else
     export IFDH_CP_MAXRETRIES=2 # because 7 is way too many attepts
     which ifdh
     echo -e "${OUTRED}${b0}: ifdh cp ${OUTPUTDIR}/cfg/cfg.tar.gz cfg.tar.gz ${OUTNOCOL}"
-    ifdh cp ${OUTPUTDIR}/cfg/cfg.tar.gz cfg.tar.gz
+    echo -e "${OUTRED}here I am in `pwd` ${OUTNOCOL}"
+    ls -l
+    echo ifdh cp ${OUTPUTDIR}/cfg/cfg.tar.gz ./cfg.tar.gz
+         ifdh cp ${OUTPUTDIR}/cfg/cfg.tar.gz ./cfg.tar.gz
+    ls -l
   fi
   if [ ! -f cfg.tar.gz ]; then
     echo -e "${OUTRED}${b0}: no cfg.tar.gz ${OUTNOCOL}"
     exit 42
   fi
+  echo tar xf cfg.tar.gz
   tar xf cfg.tar.gz
+  ls -l
 
   echo " "
   missing=""
@@ -2772,7 +2794,7 @@ else
   if [ ${DOLAUNCHDAG} -ne 0 ]; then
     echo ""
     echo -e "${OUTBLUE}${b0}: --launch-dag ${OUTNOCOL}"
-    setup jobsub_client
+    # setup jobsub_client
     echo -e "${OUTBLUE}${b0}: creating genie_splines.${JOBSUB_GROUP_ARG}.dag ${OUTNOCOL}"
     sed -e "s/group JOBSUB_GROUP/group ${JOBSUB_GROUP_ARG}/g" ${OUTPUTDIR}/cfg/genie_splines.dag  > genie_splines.${JOBSUB_GROUP_ARG}.dag
     if [ ${VERBOSE} -gt 2 ]; then
@@ -2781,8 +2803,8 @@ else
     fi
     # --generate-email-summary doesn't seem to be an option
     #JSDAGCMD="jobsub_submit_dag --group ${JOBSUB_GROUP_ARG} file://`pwd`/genie_splines.${JOBSUB_GROUP_ARG}.dag"
-    #JSDAGCMD="jobsub_submit --group ${JOBSUB_GROUP_ARG} --dag file://`pwd`/genie_splines.${JOBSUB_GROUP_ARG}.dag"
-    JSDAGCMD="jobsub_submit --group ${JOBSUB_GROUP_ARG} --dag file:///${OUTPUTDIR}/cfg/genie_splines.dag"
+    JSDAGCMD="jobsub_submit --group ${JOBSUB_GROUP_ARG} --dag file://`pwd`/genie_splines.${JOBSUB_GROUP_ARG}.dag"
+    #JSDAGCMD="jobsub_submit --group ${JOBSUB_GROUP_ARG} --dag file:///${OUTPUTDIR}/cfg/genie_splines.dag"
     echo -e "${OUTPURPLE} ${JSDAGCMD} ${OUTNOCOL}"
     NOWTXT=`date "+%Y%m%d_%H%M%S"`
     JSLOG=${ORIGINALDIR}/jobsub_submit_dag-${NOWTXT}.log
