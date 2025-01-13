@@ -1,13 +1,11 @@
 #! /usr/bin/env bash
 export THISFILE="$0"
 export b0=`basename $0`
-export GEN_GENIE_SPLINE_VERSION=2021-05-20
+export GEN_GENIE_SPLINE_VERSION=2025-01-13
 echo -e "${OUTRED}GEN_GENIE_SPLINE_VERSION ${GEN_GENIE_SPLINE_VERSION} ${OUTNOCOL}"
 
-export IFDHC_VERSION="" # "v2_3_9"  # usually "" default to v2_1_0 currently
-#                              # v2_1_0 now setups up v2_3_6a ifdhc_config
-#                              # ... in _some_ cases?
-export IFDHC_CONFIG_VERSION="" # "v2_3_9" # force version ""=leave alone
+export IFDHC_VERSION="" # "v2_7_2"  # usually "" default to v2_7_2 currently
+export IFDHC_CONFIG_VERSION="" # "v2_7_2" # force version ""=leave alone
 #
 # users need to modify the following products of this script:
 #   'define_cfg.sh'        adjust parameters in defined function
@@ -2121,9 +2119,10 @@ echo "<parallel>" >> $DAG
 # --expected-lifetime 3h,8h  85200s(=23.666hr)
 # -n is REQUIRED apparently (creates but doesn't submit job)
 jsdcmd="  jobsub_submit --group ${JOBSUB_GROUP_ARG} "
-jsdcmd="${jsdcmd} --OS=SL7 --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC" # ,OFFSITE "
+jsdcmd="${jsdcmd} --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE "
 #jsdcmd="${jsdcmd} --resource-provides=usage_model=OFFSITE "
 jsdcmd="${jsdcmd} --append_condor_requirements='(TARGET.HAS_CVMFS_dune_opensciencegrid_org==true)' "
+jsdcmd="${jsdcmd} --singularity-image=/cvmfs/singularity.opensciencegrid.org/fermilab/fnal-wn-sl7:latest "
 bigmem=" --memory=4095MB "
 shortt=" --expected-lifetime 3h"
 mediumt=" --expected-lifetime 8h"
