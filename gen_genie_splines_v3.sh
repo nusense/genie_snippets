@@ -2656,12 +2656,15 @@ else
 ## to likely to overwhelm ...
   case `uname -n` in
     *nova* )
-       _CONDOR_SCRATCH_DIR=/nova/ana/users/${USER}/fake_CONDOR_SCRATCH_DIR_$$
+       _CONDOR_SCRATCH_DIR=/exp/nova/data/users/${USER}/fake_CONDOR_SCRATCH_DIR_$$
+       ;;
+    *dune* )
+       _CONDOR_SCRATCH_DIR=/exp/dune/data/users/${USER}/fake_CONDOR_SCRATCH_DIR_$$
        ;;
     *genie* )
         # there is no /genie/data or /genie/ana
         # but we don't want to use PNFS
-       _CONDOR_SCRATCH_DIR=/genie/app/users/${USER}/fake_CONDOR_SCRATCH_DIR_$$
+       _CONDOR_SCRATCH_DIR=/exp/genie/app/users/${USER}/fake_CONDOR_SCRATCH_DIR_$$
        ;;
   esac
   export FAKESCRATCH=1
