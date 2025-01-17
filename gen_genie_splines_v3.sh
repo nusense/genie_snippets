@@ -2118,7 +2118,7 @@ echo "#" >> $DAGREADME
 echo "<parallel>" >> $DAG
 # --expected-lifetime 3h,8h  85200s(=23.666hr)
 # -n is REQUIRED apparently (creates but doesn't submit job)
-jsdcmd="  jobsub_submit --group ${JOBSUB_GROUP_ARG} "
+jsdcmd="  jobsub_submit -n --group ${JOBSUB_GROUP_ARG} "
 jsdcmd="${jsdcmd} --resource-provides=usage_model=DEDICATED,OPPORTUNISTIC,OFFSITE "
 #jsdcmd="${jsdcmd} --resource-provides=usage_model=OFFSITE "
 jsdcmd="${jsdcmd} --append_condor_requirements='(TARGET.HAS_CVMFS_dune_opensciencegrid_org==true)' "
@@ -2168,7 +2168,7 @@ HERE=`pwd`
 cd ${OUTPUTDIR}/cfg
 echo -e  "${OUTYELLOW} RWH --- HERE is set to ${HERE} ${OUTNOCOL}"
 echo -e  "${OUTYELLOW} RWH --- pwd is  `pwd` ${OUTNOCOL}"
-export GZIP="-9"
+
 xmllist=`ls *.xml 2>/dev/null `
 # pull in custom CMC directory if present
 echo -e  "${OUTYELLOW} RWH --- FETCHTUNEFROM=${FETCHTUNEFROM} ${CUSTOMTUNE} ${INITTUNECMC} ${OUTNOCOL}"
@@ -2182,6 +2182,9 @@ echo -e "${OUTYELLOW} RWH tar cfz ${HERE}/cfg.tar.gz *.sh *.cfg $xmllist ${OUTNO
 tar cfz ${HERE}/cfg.tar.gz *.sh *.cfg $xmllist
 cd ${HERE}
 cp cfg.tar.gz ${OUTPUTDIR}/cfg/cfg.tar.gz
+echo -e  "${OUTRED} RWH --- ls -l ${OUTPUTDIR}/cfg"
+ls -l ${OUTPUTDIR}/cfg
+echo -e  "${OUTRED} RWH --- done ${OUTNOCOL}"
 }
 
 ##############################################################################
@@ -2797,21 +2800,23 @@ else
     echo ""
     echo -e "${OUTBLUE}${b0}: --launch-dag ${OUTNOCOL}"
     # setup jobsub_client
-    echo -e "${OUTBLUE}${b0}: creating genie_splines.${JOBSUB_GROUP_ARG}.dag ${OUTNOCOL}"
-    sed -e "s/group JOBSUB_GROUP/group ${JOBSUB_GROUP_ARG}/g" ${OUTPUTDIR}/cfg/genie_splines.dag  > genie_splines.${JOBSUB_GROUP_ARG}.dag
-    if [ ${VERBOSE} -gt 2 ]; then
-       echo -e "${OUTBLUE}${b0}: genie_splines.${JOBSUB_GROUP_ARG}.dag ${OUTNOCOL}"
-      cat genie_splines.${JOBSUB_GROUP_ARG}.dag
-    fi
+    # echo -e "${OUTBLUE}${b0}: creating genie_splines.${JOBSUB_GROUP_ARG}.dag ${OUTNOCOL}"
+    # sed -e "s/group JOBSUB_GROUP/group ${JOBSUB_GROUP_ARG}/g" ${OUTPUTDIR}/cfg/genie_splines.dag  > genie_splines.${JOBSUB_GROUP_ARG}.dag
+    # if [ ${VERBOSE} -gt 2 ]; then
+    #    echo -e "${OUTBLUE}${b0}: genie_splines.${JOBSUB_GROUP_ARG}.dag ${OUTNOCOL}"
+    #    cat genie_splines.${JOBSUB_GROUP_ARG}.dag
+    # fi
     # --generate-email-summary doesn't seem to be an option
     #JSDAGCMD="jobsub_submit_dag --group ${JOBSUB_GROUP_ARG} file://`pwd`/genie_splines.${JOBSUB_GROUP_ARG}.dag"
-    JSDAGCMD="jobsub_submit --group ${JOBSUB_GROUP_ARG} --dag file://`pwd`/genie_splines.${JOBSUB_GROUP_ARG}.dag"
-    #JSDAGCMD="jobsub_submit --group ${JOBSUB_GROUP_ARG} --dag file:///${OUTPUTDIR}/cfg/genie_splines.dag"
+    # JSDAGCMD="jobsub_submit --group ${JOBSUB_GROUP_ARG} --dag file://`pwd`/genie_splines.${JOBSUB_GROUP_ARG}.dag"
+
+    DAGFILE=${OUTPUTDIR}/cfg/genie_splines.dag
+    JSDAGCMD="jobsub_submit --group ${JOBSUB_GROUP_ARG} --dag file://${DAGFILE}"
     echo -e "${OUTPURPLE} ${JSDAGCMD} ${OUTNOCOL}"
     NOWTXT=`date "+%Y%m%d_%H%M%S"`
     JSLOG=${ORIGINALDIR}/jobsub_submit_dag-${NOWTXT}.log
     echo "${JSDAGCMD}" > $JSLOG
-    cat genie_splines.${JOBSUB_GROUP_ARG}.dag >> $JSLOG
+    cat $DAGFILE >> $JSLOG
     ${JSDAGCMD} >> $JSLOG
     echo -e "${OUTPURPLE} jobsub_submit_dag log ${JSLOG} ${OUTNOCOL}"
     echo -e "${OUTLTRED}"
