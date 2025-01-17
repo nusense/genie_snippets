@@ -8,6 +8,7 @@
 
 # ACTION is one of:  init launch-dag status
 
+JSGROUP=dune
 
 export ACTION="status"
 if [ -n "$1" ]; then ACTION="$1" ; fi
@@ -45,7 +46,7 @@ export OTHERTUNES=" \
 
 echo TUNELIST=$TUNELIST
 
-export JOBSUB_GROUP=nova # nova dune  # need to try "genie" role=production
+export JOBSUB_GROUP=${JSGROUP} # nova dune  # need to try "genie" role=production
 export SEP="============================================================="
 
 export KNOTS=250
@@ -64,7 +65,13 @@ export LOGBASE=v30600
 
 echo "version:  $GXVER $GVERS $GQUAL"
 
-TOPGEN=/pnfs/nova/scratch/users/rhatcher/gen_genie_splines_v3
+if [ "JSGROUP" == "genie" ]; then
+    TOPGEN=/pnfs/${JSGROUP}/scratch/users/rhatcher/gen_genie_splines_v3
+    echo -e ${OUTRED}THIS PROBABLY WONT WORK -- use of /pnfs${OUTNOCOL}
+    echo -e ${OUTRED}TOPGEN=${TOPGEN}${OUTNOCOL}
+else
+  TOPGEN=/pnfs/${JSGROUP}/scratch/users/rhatcher/gen_genie_splines_v3
+fi
 
 function now ()
 {
@@ -95,8 +102,11 @@ alias myjobs="jobsub_q --user $USER"
 
 export UPSV="ups:genie+trycvmfs%${GVERS}%${GQUAL}"
 
-#cd /genie/app/rhatcher/GXSPLINE
-cd /exp/nova/app/users/rhatcher/GXSPLINE
+if [ "$JSGROUP" == "genie" ]; then
+  cd /genie/app/rhatcher/GXSPLINE
+else
+  cd /exp/${JSGROUP}/app/users/rhatcher/GXSPLINE
+fi
 
 export TUNE
 EMAXX=`echo ${EMAX} | tr '.' 'p' | sed -e 's/p0*$//g'`
