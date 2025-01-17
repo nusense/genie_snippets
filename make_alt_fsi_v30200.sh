@@ -12,7 +12,7 @@ fi
 BASETUNE=$1
 NEWFSI=$2
 
-XSECVER="v3_02_00"
+XSECVER="v3_02_02"
 XSECDOT=`echo ${XSECVER} | tr _ . | tr -d v`   # "3.02.00"
 KNOTS="250"
 EMAX="1000"
