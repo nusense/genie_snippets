@@ -17,6 +17,7 @@ export TUNELIST=" \
               XN24_20i_02_11b \
               XAR23_20i_00_000 \
               XG18_02a_00_000 \
+              G18_10a_02_11b \
 "
 export OTHERTUNES=" \
               XG00_00a_00_000 \
