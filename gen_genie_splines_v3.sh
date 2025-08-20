@@ -1402,6 +1402,7 @@ cat > ${AWKFILE} <<EOF
 # This only limits what is allowed; if a combination isn't in the
 # input file it won't magically appear in the output
 #
+#
 BEGIN {
   doout=1; keep=1;
   nlines=0; maxlines=0; # set non-zero maxlines only for testing puroses
@@ -1436,9 +1437,9 @@ cat >> ${AWKFILE} <<EOF
   split(nuvaltmp,nuarray,":");
   nuval=nuarray[2];
   #print "tgtarray[2] = ",tgtval," nuarray[2] = ",nuval;
-  if ( tgtval in tgtkeep ) {
+  if ( tgtval in tgtkeep && 0 != tgtkeep[tgtval] ) {
     #print "keep this tgt ",tgtval;
-    if ( nuval in nukeep ) {
+    if ( nuval in nukeep && 0 != nukeep[nuval] ) {
       keep=1; doout=1;
     } else {
       # print "reject this nu",nuval;
@@ -2683,7 +2684,7 @@ fi
 
 report_node_info
 
-printenv | sort
+# printenv | sort
 
 echo -e "${OUTRED}pwd=`pwd` ${OUTNOCOL}"
 echo -e "${OUTRED}cd ${_CONDOR_SCRATCH_DIR} ${OUTNOCOL}"
