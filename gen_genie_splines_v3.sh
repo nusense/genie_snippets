@@ -1184,8 +1184,8 @@ function setup_genie()
                      setup genie \$version -q \$qualifier
 
   # grid nodes mssing libxxhash.so and libzstd.so
-  echo "setup_genie: setup auxlibs v1_00 -q slf7"
-                     setup auxlibs v1_00 -q slf7
+  ## echo "setup_genie: setup auxlibs v1_00 -q slf7"
+  ##                    setup auxlibs v1_00 -q slf7
 
 }
 ##############################################################################
@@ -1228,8 +1228,17 @@ function bootstrap_ups()
       #/grid/fermiapp/products/larsoft
       #/grid/fermiapp/products/nova/externals
 
-      UPS_CVMFS_AUX=/cvmfs/fermilab.opensciencegrid.org/products/genie/local:/cvmfs/fermilab.opensciencegrid.org/products/common/db:/cvmfs/larsoft.opensciencegrid.org/products/:/cvmfs/fermilab.opensciencegrid.org/products/larsoft:/cvmfs/nova.opensciencegrid.org/externals
-      UPS_DIRECT_AUX=/grid/fermiapp/products/genie/local:/grid/fermiapp/products/common/db:/grid/fermiapp/products/larsoft:/grid/fermiapp/products/nova/externals
+      UPS_CVMFS_AUX=\
+/cvmfs/fermilab.opensciencegrid.org/products/genie/local\
+:/cvmfs/fermilab.opensciencegrid.org/products/common/db\
+:/cvmfs/larsoft.opensciencegrid.org/products/\
+:/cvmfs/dune.opensciencegrid.org/products/dune\
+:/cvmfs/nova.opensciencegrid.org/externals
+      UPS_DIRECT_AUX=\
+/grid/fermiapp/products/genie/local\
+:/grid/fermiapp/products/common/db\
+:/grid/fermiapp/products/larsoft\
+:/grid/fermiapp/products/nova/externals
 
       ;;
     larsoft* | dune* | lbne* | uboone* )
