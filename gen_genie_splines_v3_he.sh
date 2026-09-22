@@ -588,8 +588,8 @@ function create_isotopes_file()
   1000010020    H2      0.0115    reduced   root
 #
 ### helium   # skip He3
-  1000020030   He3      0.000137                  electron
-  1000020040   He4     99.9999    reduced         electron
+#X  1000020030   He3      0.000137                  electron
+#X  1000020040   He4     99.9999    reduced         electron
 #
 ### lithium  # skip all
 # 1000030060   Li6      7.59
@@ -599,8 +599,8 @@ function create_isotopes_file()
   1000040090   Be9    100.        reduced
 #
 ### boron
-  1000050100   B10     19.9
-  1000050110   B11     80.1       reduced
+#X  1000050100   B10     19.9
+#X  1000050110   B11     80.1       reduced
 #
 ### carbon
   1000060120   C12     98.93      reduced  root  electron
@@ -627,9 +627,9 @@ function create_isotopes_file()
   1000110230  Na23    100.        reduced  root
 #
 ### magnesium
-  1000120240  Mg24     78.99      reduced  root
-  1000120250  Mg25     10.0
-  1000120260  Mg26     11.01
+#X  1000120240  Mg24     78.99      reduced  root
+#X  1000120250  Mg25     10.0
+#X  1000120260  Mg26     11.01
 #
 ### aluminum
   1000130270  Al27    100.        reduced  root
@@ -640,12 +640,12 @@ function create_isotopes_file()
   1000140300  Si30      3.0872
 #
 ### phosphorus
-  1000150310  P31     100.        reduced  root
+#X  1000150310  P31     100.        reduced  root
 #
 ### sulfur  # skip 36
-  1000160320   S32     94.93      reduced  root
-  1000160330   S33      0.76
-  1000160340   S34      4.29
+#X  1000160320   S32     94.93      reduced  root
+#X  1000160330   S33      0.76
+#X  1000160340   S34      4.29
 # 1000160360   S36      0.02
 #
 ### chlorine
@@ -660,16 +660,16 @@ function create_isotopes_file()
   1000180400  Ar40     99.6003    reduced  root  electron
 #
 ### potassium
-  1000190390   K39     93.2581    reduced
-  1000190400   K40      0.0117
-  1000190410   K41      6.7302
+#X  1000190390   K39     93.2581    reduced
+#X  1000190400   K40      0.0117
+#X  1000190410   K41      6.7302
 #
 # calcium
-  1000200400  Ca40     96.941     reduced  root  electron
-  1000200410  Ca41   -999.0
-  1000200420  Ca42      0.647
-  1000200430  Ca43      0.135
-  1000200440  Ca44      2.086
+#X  1000200400  Ca40     96.941     reduced  root  electron
+#X  1000200410  Ca41   -999.0
+#X  1000200420  Ca42      0.647
+#X  1000200430  Ca43      0.135
+#X  1000200440  Ca44      2.086
 # 1000200460  Ca46      0.004
 # 1000200480  Ca48      0.187
 #
@@ -677,25 +677,25 @@ function create_isotopes_file()
 #  1000210450  Sc45   100.
 #
 ### titanium
-  1000220460  Ti46      8.25
-  1000220470  Ti47      7.44
-  1000220480  Ti48     73.72      reduced  root  electron
-  1000220490  Ti49      5.41
-  1000220500  Ti50      5.18
+#X  1000220460  Ti46      8.25
+#X  1000220470  Ti47      7.44
+#X  1000220480  Ti48     73.72      reduced  root  electron
+#X  1000220490  Ti49      5.41
+#X  1000220500  Ti50      5.18
 #
 ### vanadium
-  1000230500   V50      0.25
-  1000230510   V51     99.75      reduced
+#X  1000230500   V50      0.25
+#X  1000230510   V51     99.75      reduced
 #
 ### chromium
-  1000240500  Cr50      4.345
-  1000240510  Cr51   -999.0
-  1000240520  Cr52     83.789     reduced
-  1000240530  Cr53      9.501
-  1000240540  Cr54      2.365
+#X  1000240500  Cr50      4.345
+#X  1000240510  Cr51   -999.0
+#X  1000240520  Cr52     83.789     reduced
+#X  1000240530  Cr53      9.501
+#X  1000240540  Cr54      2.365
 #
 ### manganese
-  1000250550  Mn55    100.        reduced  root
+#X  1000250550  Mn55    100.        reduced  root
 #
 ### iron
   1000260540  Fe54      5.845     reduced
@@ -704,7 +704,7 @@ function create_isotopes_file()
   1000260580  Fe58      0.282     reduced
 #
 ### cobalt
-  1000270590  Co59    100.
+#X  1000270590  Co59    100.
 #
 ### nickel
   1000280580  Ni58     68.0769    reduced
@@ -720,12 +720,12 @@ function create_isotopes_file()
   1000290650  Cu65     30.83      reduced
 #
 ### zinc
-  1000300640  Zn64     48.63      reduced
-  1000300650  Zn65   -999.0       reduced
-  1000300660  Zn66     27.9
-  1000300670  Zn67      4.1
-  1000300680  Zn68     18.75
-  1000300700  Zn70      0.62
+#X  1000300640  Zn64     48.63      reduced
+#X  1000300650  Zn65   -999.0       reduced
+#X  1000300660  Zn66     27.9
+#X  1000300670  Zn67      4.1
+#X  1000300680  Zn68     18.75
+#X  1000300700  Zn70      0.62
 #
 ### gallium
 # 1000310690  Ga69     60.108
@@ -756,12 +756,12 @@ function create_isotopes_file()
 #
 ### krypton
 ### enable for NA62
-  1000360780  Kr78      0.35
-  1000360800  Kr80      2.28
-  1000360820  Kr82     11.58
-  1000360830  Kr83     11.49
-  1000360840  Kr84     57.0       reduced
-  1000360860  Kr86     17.3
+#X  1000360780  Kr78      0.35
+#X  1000360800  Kr80      2.28
+#X  1000360820  Kr82     11.58
+#X  1000360830  Kr83     11.49
+#X  1000360840  Kr84     57.0       reduced
+#X  1000360860  Kr86     17.3
 #
 ### rubidium
 # 1000370850  Rb85     72.17
@@ -785,14 +785,14 @@ function create_isotopes_file()
 #
 ### niobium
 # add this to reduced for ICARUS
-  1000410930  Nb93    100.        reduced
+#X  1000410930  Nb93    100.        reduced
 #
 ### molybdenum
 # 1000420920  Mo92     14.84
 # 1000420940  Mo94      9.25
-  1000420950  Mo95     15.92
+#X  1000420950  Mo95     15.92
 # add this to reduced for ICARUS
-  1000420960  Mo96     16.68      reduced
+#X  1000420960  Mo96     16.68      reduced
 # 1000420970  Mo97      9.55
 # 1000420980  Mo98     24.13
 # 1000421000 Mo100      9.63
@@ -816,7 +816,7 @@ function create_isotopes_file()
 # 1000440980  Ru98      1.87
 # 1000440990  Ru99     12.76
 # 1000441000 Ru100      12.6
-  1000441010 Ru101     17.06      reduced
+#X  1000441010 Ru101     17.06      reduced
 # 1000441020 Ru102     31.55
 # 1000441040 Ru104     18.62
 #
@@ -853,18 +853,18 @@ function create_isotopes_file()
 # 1000501120 Sn112      0.97
 # 1000501140 Sn114      0.66
 # 1000501150 Sn115      0.34
-  1000501160 Sn116     14.54
-  1000501170 Sn117      7.68
-  1000501180 Sn118     24.22
-  1000501190 Sn119      8.59      reduced  root
-  1000501200 Sn120     32.58
+#X  1000501160 Sn116     14.54
+#X  1000501170 Sn117      7.68
+#X  1000501180 Sn118     24.22
+#X  1000501190 Sn119      8.59      reduced  root
+#X  1000501200 Sn120     32.58
 # 1000501220 Sn122      4.63
 # 1000501240 Sn124      5.79
 #
 ### antimony
-  1000511210 Sb121     57.21
-  1000511220 Sb122   -999.0       perhapsfuturered
-  1000511230 Sb123     42.79
+#X  1000511210 Sb121     57.21
+#X  1000511220 Sb122   -999.0       perhapsfuturered
+#X  1000511230 Sb123     42.79
 #
 ### tellurium
 # 1000521200 Te120      0.09
@@ -884,26 +884,26 @@ function create_isotopes_file()
 ## for 2.8.6 skip 136 (no output I135 isotope)
 # 1000541240 Xe124      0.09
 # 1000541260 Xe126      0.09
-  1000541280 Xe128      1.92
-  1000541290 Xe129     26.44
-  1000541300 Xe130      4.08
-  1000541310 Xe131     21.18      reduced  root
-  1000541320 Xe132     26.89
-  1000541340 Xe134     10.44
-  1000541360 Xe136      8.87
+#X  1000541280 Xe128      1.92
+#X  1000541290 Xe129     26.44
+#X  1000541300 Xe130      4.08
+#X  1000541310 Xe131     21.18      reduced  root
+#X  1000541320 Xe132     26.89
+#X  1000541340 Xe134     10.44
+#X  1000541360 Xe136      8.87
 #
 ### cesium
-  1000551330 Cs133    100.        perhapsfuturered
+#X  1000551330 Cs133    100.        perhapsfuturered
 #
 ### barium
 ## for 2.8.6 skip 130, 132
 # 1000561300 Ba130      0.106
 # 1000561320 Ba132      0.101
-  1000561340 Ba134      2.417
-  1000561350 Ba135      6.592
-  1000561360 Ba136      7.854
-  1000561370 Ba137      7.854     reduced
-  1000561380 Ba138     71.698
+#X  1000561340 Ba134      2.417
+#X  1000561350 Ba135      6.592
+#X  1000561360 Ba136      7.854
+#X  1000561370 Ba137      7.854     reduced
+#X  1000561380 Ba138     71.698
 #
 ### lanthanum
 # 1000571380 La138      0.09
@@ -944,13 +944,13 @@ function create_isotopes_file()
 # 1000631530 Eu153     52.19
 #
 ### gadolinium
-  1000641520 Gd152      0.2
-  1000641540 Gd154      2.18
-  1000641550 Gd155     14.8
-  1000641560 Gd156     20.47
-  1000641570 Gd157     15.65
-  1000641580 Gd158     24.84      reduced
-  1000641600 Gd160     21.86
+#X  1000641520 Gd152      0.2
+#X  1000641540 Gd154      2.18
+#X  1000641550 Gd155     14.8
+#X  1000641560 Gd156     20.47
+#X  1000641570 Gd157     15.65
+#X  1000641580 Gd158     24.84      reduced
+#X  1000641600 Gd160     21.86
 #
 ### terbium
 # 1000651590 Tb159    100.
@@ -1036,7 +1036,7 @@ function create_isotopes_file()
 # 1000781920 Pt192      7.163
 #
 ### gold
-  1000791970 Au197    100.       reduced
+#X  1000791970 Au197    100.       reduced
 #
 ### mercury
 # 1000801960 Hg196      0.15
@@ -1052,10 +1052,10 @@ function create_isotopes_file()
 # 1000812050 Tl205     70.476
 #
 ### lead
-  1000822040 Pb204      1.4
-  1000822060 Pb206     24.1
-  1000822070 Pb207     22.1       reduced
-  1000822080 Pb208     52.4                      electron
+#X  1000822040 Pb204      1.4
+#X  1000822060 Pb206     24.1
+#X  1000822070 Pb207     22.1       reduced
+#X  1000822080 Pb208     52.4                      electron
 #
 ### bismuth
 # 1000832090 Bi209    100.
@@ -1182,6 +1182,17 @@ function setup_genie()
 
   echo "setup_genie: setup genie \$version -q \$qualifier"
                      setup genie \$version -q \$qualifier
+
+  echo "define HEDIS_SF_DATA_PATH, PHOTON_SF_DATA_PATH,LHAPATH
+
+  export HEDIS_SF_DATA_PATH=/cvmfs/fermilab.opensciencegrid.org/products/genie/externals/pochoarus-genie_he_data/hedis-sf
+  echo ${HEDIS_SF_DATA_PATH}
+
+  export PHOTON_SF_DATA_PATH=/cvmfs/fermilab.opensciencegrid.org/products/genie/externals/pochoarus-genie_he_data/photon-sf
+  echo ${PHOTON_SF_DATA_PATH}
+
+  export LHAPATH=/cvmfs/fermilab.opensciencegrid.org/products/genie/externals/pochoarus-genie_he_data/pdfs:${LHAPDF_FQ_DIR}/share/LHAPDF
+  echo ${LHAPATH}
 
   # grid nodes mssing libxxhash.so and libzstd.so
   ## echo "setup_genie: setup auxlibs v1_00 -q slf7"
