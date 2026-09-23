@@ -268,7 +268,7 @@ function define_cfg()
   #           (optional GENIE XML files,
   #            or directory Gdd_mmv-PP_xxx w/ XML files)
   #        bin/
-  #           gen_genie_splines_v3.sh  # copy of this script
+  #           gen_genie_splines_v3_he.sh  # copy of this script
   #        work-products/  # individual splines & work logs
   #           freenucs/
   #           isotopes/
@@ -1183,16 +1183,16 @@ function setup_genie()
   echo "setup_genie: setup genie \$version -q \$qualifier"
                      setup genie \$version -q \$qualifier
 
-  echo "define HEDIS_SF_DATA_PATH, PHOTON_SF_DATA_PATH,LHAPATH
+  echo "define HEDIS_SF_DATA_PATH, PHOTON_SF_DATA_PATH,LHAPATH"
 
   export HEDIS_SF_DATA_PATH=/cvmfs/fermilab.opensciencegrid.org/products/genie/externals/pochoarus-genie_he_data/hedis-sf
-  echo ${HEDIS_SF_DATA_PATH}
+  echo \${HEDIS_SF_DATA_PATH}
 
   export PHOTON_SF_DATA_PATH=/cvmfs/fermilab.opensciencegrid.org/products/genie/externals/pochoarus-genie_he_data/photon-sf
-  echo ${PHOTON_SF_DATA_PATH}
+  echo \${PHOTON_SF_DATA_PATH}
 
-  export LHAPATH=/cvmfs/fermilab.opensciencegrid.org/products/genie/externals/pochoarus-genie_he_data/pdfs:${LHAPDF_FQ_DIR}/share/LHAPDF
-  echo ${LHAPATH}
+  export LHAPATH=/cvmfs/fermilab.opensciencegrid.org/products/genie/externals/pochoarus-genie_he_data/pdfs:\${LHAPDF_FQ_DIR}/share/LHAPDF
+  echo \${LHAPATH}
 
   # grid nodes mssing libxxhash.so and libzstd.so
   ## echo "setup_genie: setup auxlibs v1_00 -q slf7"
@@ -1799,16 +1799,24 @@ function generate_freenucpair()
   echo "complete gmkspl at ${tcomplete}; wall time ${ds} seconds" >> ${LOG}
 
   # NaN or inf in the XML file?? ... hack, hack
-  nnan=`egrep -c -i 'nan|inf' ${XML} | cut -d':' -f2`
+  nnan=0
+  if [ -f ${XML} ]; then
+      nnan=`egrep -c -i 'nan|inf' ${XML} | cut -d':' -f2`
+  fi
   if [ ${nnan} -gt 0 ]; then
     mv ${XML} ${XML}-NAN
     cat ${XML}-NAN | \
          sed -e 's/ [ -][nN][aA][nN] / 0.0 /g' \
              -e 's/ [ -][iI][nN][fF] / 0.0 /g' > ${XML}
-    ${MYCP}   ${XML}-NAN $OUTPUTDIR/work-products/freenucs/${XML}-NAN
+    ${MYCP} ${XML}-NAN $OUTPUTDIR/work-products/freenucs/${XML}-NAN
   fi
 
-  ${MYCP} ${XML} $OUTPUTDIR/work-products/freenucs/${XML}
+  if [ -f ${XML} ]; then
+      ${MYCP} ${XML} $OUTPUTDIR/work-products/freenucs/${XML}
+  else
+      echo "no ${XML} file "
+      echo "no ${XML} file " >> ${LOG}
+  fi
   ${MYCP} ${LOG} $OUTPUTDIR/work-products/freenucs/${LOG}
 
   sleep 5s
@@ -1903,7 +1911,10 @@ function generate_isotope()
   echo "complete gmkspl at ${tcomplete}; wall time ${ds} seconds" >> ${LOG}
 
   # NaN or inf in the XML file?? ... hack, hack
-  nnan=`egrep -c -i 'nan|inf' ${XML} | cut -d':' -f2`
+  nnan=0
+  if [ -f ${XML} ]; then
+      nnan=`egrep -c -i 'nan|inf' ${XML} | cut -d':' -f2`
+  fi
   if [ ${nnan} -gt 0 ]; then
     mv ${XML} ${XML}-NAN
     cat ${XML}-NAN | \
@@ -1913,7 +1924,12 @@ function generate_isotope()
   fi
 
   # push our work products back
-  ${MYCP} ${XML} ${OUTPUTDIR}/work-products/isotopes/${XML}
+  if [ -f ${XML} ]; then
+      ${MYCP} ${XML} ${OUTPUTDIR}/work-products/isotopes/${XML}
+  else
+      echo "no ${XML} file "
+      echo "no ${XML} file " >> ${LOG}
+  fi
   ${MYCP} ${LOG} ${OUTPUTDIR}/work-products/isotopes/${LOG}
 
   sleep 5s
@@ -2176,7 +2192,7 @@ longt=" --expected-lifetime 85200s"
 superlongt=" --expected-lifetime 170400s"  # ~2 days
 normald=" --disk 2GB"
 bigd=" --disk 10GB"
-basic=" file://${OUTPUTDIR}/bin/gen_genie_splines_v3.sh --top ${OUTPUTTOP} --version ${GXSPLVERSION} --qualifier ${GXSPLQUALIFIER}"
+basic=" file://${OUTPUTDIR}/bin/gen_genie_splines_v3_he.sh --top ${OUTPUTTOP} --version ${GXSPLVERSION} --qualifier ${GXSPLQUALIFIER}"
 
 
 for fth in `seq 1 $NFREENUCPAIRS`; do
@@ -2921,4 +2937,4 @@ else
 fi
 echo -e "${OUTBLUE}${b0}: end-of-script${OUTNOCOL}"
 
-# end-of-script gen_genie_splines_v3.sh
+# end-of-script gen_genie_splines_v3_he.sh
