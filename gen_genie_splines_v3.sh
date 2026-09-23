@@ -2819,9 +2819,14 @@ else
 
   if [ ${DOFINALIZECFG} -ne 0 ]; then
     # new conventions QUALIFIER = {tunex}:k{knots}:e{emax}
+    # improved to not care about k & e order
     QTUNEX=`echo ${GXSPLQUALIFIER} | cut -d':' -f1 | tr -d "_"`
-    QKNOTS=`echo ${GXSPLQUALIFIER} | cut -d':' -f2 | tr -d "k"`
-    QEMAXX=`echo ${GXSPLQUALIFIER} | cut -d':' -f3 | tr -d "e"`
+    #    QKNOTS=`echo ${GXSPLQUALIFIER} | cut -d':' -f2 | tr -d "k"`
+    #    QEMAXX=`echo ${GXSPLQUALIFIER} | cut -d':' -f3 | tr -d "e"`
+    QKNOTS=`echo ${GXSPLQUALIFIER} | tr ':' '\n' | \
+                  sed -n '2,$s/^k//p' | head -n 1`
+    QEMAXX=`echo ${GXSPLQUALIFIER} | tr ':' '\n' | \
+                  sed -n '2,$s/^e//p' | head -n 1`
     okay="true"
     TUNEX=`echo ${TUNE} | tr -d "_"`
     EMAXX=`echo ${EMAX} | tr '.' 'p' | sed -e 's/p0*$//g'`
