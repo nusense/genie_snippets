@@ -1788,7 +1788,10 @@ function generate_freenucpair()
   echo "complete gmkspl at ${tcomplete}; wall time ${ds} seconds" >> ${LOG}
 
   # NaN or inf in the XML file?? ... hack, hack
-  nnan=`egrep -c -i 'nan|inf' ${XML} | cut -d':' -f2`
+  nnan=0
+  if [ -f  ${XML} ]; then 
+      nnan=`egrep -c -i 'nan|inf' ${XML} | cut -d':' -f2`
+  fi
   if [ ${nnan} -gt 0 ]; then
     mv ${XML} ${XML}-NAN
     cat ${XML}-NAN | \
@@ -1797,7 +1800,12 @@ function generate_freenucpair()
     ${MYCP}   ${XML}-NAN $OUTPUTDIR/work-products/freenucs/${XML}-NAN
   fi
 
-  ${MYCP} ${XML} $OUTPUTDIR/work-products/freenucs/${XML}
+  if [ -f ${XML} ]; then
+      ${MYCP} ${XML} $OUTPUTDIR/work-products/freenucs/${XML}
+  else
+      echo "no ${XML} file "
+      echo "no ${XML} file " >> ${LOG}
+  fi
   ${MYCP} ${LOG} $OUTPUTDIR/work-products/freenucs/${LOG}
 
   sleep 5s
@@ -1892,7 +1900,10 @@ function generate_isotope()
   echo "complete gmkspl at ${tcomplete}; wall time ${ds} seconds" >> ${LOG}
 
   # NaN or inf in the XML file?? ... hack, hack
-  nnan=`egrep -c -i 'nan|inf' ${XML} | cut -d':' -f2`
+  nnan=0
+  if [ -f ${XML} ]; then
+      nnan=`egrep -c -i 'nan|inf' ${XML} | cut -d':' -f2`
+  fi
   if [ ${nnan} -gt 0 ]; then
     mv ${XML} ${XML}-NAN
     cat ${XML}-NAN | \
@@ -1902,7 +1913,12 @@ function generate_isotope()
   fi
 
   # push our work products back
-  ${MYCP} ${XML} ${OUTPUTDIR}/work-products/isotopes/${XML}
+  if [ -f ${XML} ]; then
+      ${MYCP} ${XML} ${OUTPUTDIR}/work-products/isotopes/${XML}
+  else
+      echo "no ${XML} file "
+      echo "no ${XML} file " >> ${LOG}
+  fi
   ${MYCP} ${LOG} ${OUTPUTDIR}/work-products/isotopes/${LOG}
 
   sleep 5s
