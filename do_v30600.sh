@@ -8,7 +8,7 @@
 
 # ACTION is one of:  init launch-dag status
 
-JSGROUP=dune
+JSGROUP=genie
 
 export ACTION="status"
 if [ -n "$1" ]; then ACTION="$1" ; fi
@@ -18,6 +18,7 @@ export TUNELIST=" \
               XAR23_20i_00_000 \
               XG18_02a_00_000 \
               XG18_10a_02_11b \
+              XG18_10a_02_11a \
 "
 export OTHERTUNES=" \
               XG00_00a_00_000 \
