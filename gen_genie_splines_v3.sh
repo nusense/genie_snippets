@@ -1420,16 +1420,15 @@ echo "  # whether to keep each species of neutrino" >> ${AWKFILE}
 #for p in `echo ${PROBELISTREDUCED} | tr ',' ' '`; do
 #  echo "  nukeep[${p}] = 1;   #" >> ${AWKFILE}
 #done
-red=" ${PROBELISTREDUCED[*]} "
-for p in "${PROBEARRAYFULL[@]}"; do
-  if [[ "$red" == *" $p "* ]]; then
+red=",${PROBELISTREDUCED// /},"
+for p in ${PROBELISTFULL//,/ }; do
+  if [[ "$red" == *",$p,"* ]]; then
     keep=1
   else
     keep=0
   fi
   echo "  nukeep[${p}] = ${keep};   #" >> "${AWKFILE}"
 done
-
 echo "  # whether to keep particular isotopes" >> ${AWKFILE}
 #let i=0
 #for t in `echo ${ISOLISTREDUCED} | tr ',' ' '`; do
@@ -2070,7 +2069,7 @@ function combine_stage3()
       if [ ${gspladd_status} -ne 0 ]; then
         echo -e "${OUTRED}${b0}: combine_stage3 failed ${THISFNAMENUSUM}${OUTNOCOL}"
         #cat ${LOG}
-        ## exit ${gspladd_status}
+        exit ${gspladd_status}
       else
         # clean up a bit to keep staging area size down
         FLISTISO1=`echo $FLISTISO | tr , " "`
