@@ -599,8 +599,8 @@ function create_isotopes_file()
   1000040090   Be9    100.        reduced
 #
 ### boron
-#X  1000050100   B10     19.9
-#X  1000050110   B11     80.1       reduced
+  1000050100   B10     19.9
+  1000050110   B11     80.1       reduced
 #
 ### carbon
   1000060120   C12     98.93      reduced  root  electron
