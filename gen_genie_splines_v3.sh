@@ -68,6 +68,7 @@ Initialization step uses the flags:
                             UserPhysicsOptions.xml and/or
                             EventGeneratorListAssembler.xml)
       --fetch-tune-from <path>   look for, copy directory from this path
+      --fetch-isotopes           look for and copy isotopes.cfg given here
 
     optional:
 
@@ -90,6 +91,7 @@ Initialization step uses the flags:
       --split-nu-isotopes     [${SPLITNUISOTOPES}]  when doing isotopes run single nu flavors
 
       --fetch-tune-from       [${FETCHTUNEFROM}]    fetch custom tune info from path
+      --fetch-isotopes        [${FETCHISOTOPES}]    fetch custom isotopes.cfg from given path
 
       --skip-stage3-check     DANGER: do NOT do this without very good cause
       --keep-scratch          don't do cleanup of fake_CONDOR_SCRATCH on non-worker node
@@ -136,11 +138,11 @@ and individual substeps can be run by hand via:
    0:  simply check current progress  (equiv to --status)
    1:  generate individual single nu flavor off a single free nucleon
    2:  combine all sub-files from stage 1
-   3:  generate all nu flavors of a single isotope
+   3:  generate all nu flavors (collectively or separately) of a single isotope
    4:  combine all sub-files from stage 3
-        + create a reduced list of isotopes
+   5:  create a reduced list of isotopes
         + create ROOT TGraph file
-   5:  package into UPS format
+   6:  package into UPS format
 
  -r | --run-stage=STAGE       do processing for stage [$STAGE]
  -s | --subprocess=INSTANCE   do n-th subprocess for a stage [\$PROCESS]
@@ -565,6 +567,7 @@ function create_isotopes_file()
 #  gmajor=`echo ${GXSPLVDOTS} | cut -d. -f1`
 #  gminor=`echo ${GXSPLVDOTS} | cut -d. -f2`
 
+  if [ -z ${FETCHISOTOPES} ]; then
   cat > isotopes.cfg <<EOF
 ##############################################################################
 #
@@ -1124,6 +1127,21 @@ function create_isotopes_file()
 #
 #### end-of-isotope_table
 EOF
+  else
+    # user requested to use their own file
+    # were we given a file, or a path?
+    if [ -d ${FETCHISOTOPES} ]; then
+      FETCHISOTOPES=${FETCHISOTOPES}/isotopes.cfg
+    fi
+    if [ -f ${FETCHISOTOPES} ]; then
+      # copy it to standardize name even if the start wasn't
+      cp ${FETCHISOTOPES} ./isotopes.cfg
+    else
+      echo -e "${OUTBLUE}${b0}:${OUTRED} use requested using ${FETCHISOTOPES}${OUTNOCOL}"
+      echo -e "${OUTBLUE}${b0}:${OUTRED} file does not exist${OUTNOCOL}"
+      exit 42
+    fi
+  fi
 
 } # end-of-function create_isotopes_file()
 ##############################################################################
@@ -1183,7 +1201,18 @@ function setup_genie()
   echo "setup_genie: setup genie \$version -q \$qualifier"
                      setup genie \$version -q \$qualifier
 
-  # grid nodes mssing libxxhash.so and libzstd.so
+  echo "define HEDIS_SF_DATA_PATH, PHOTON_SF_DATA_PATH,LHAPATH"
+
+  export HEDIS_SF_DATA_PATH=/cvmfs/fermilab.opensciencegrid.org/products/genie/externals/pochoarus-genie_he_data/hedis-sf
+  echo \${HEDIS_SF_DATA_PATH}
+
+  export PHOTON_SF_DATA_PATH=/cvmfs/fermilab.opensciencegrid.org/products/genie/externals/pochoarus-genie_he_data/photon-sf
+  echo \${PHOTON_SF_DATA_PATH}
+
+  export LHAPATH=/cvmfs/fermilab.opensciencegrid.org/products/genie/externals/pochoarus-genie_he_data/pdfs:\${LHAPDF_FQ_DIR}/share/LHAPDF
+  echo \${LHAPATH}
+
+  # grid nodes missing libxxhash.so and libzstd.so
   ## echo "setup_genie: setup auxlibs v1_00 -q slf7"
   ##                    setup auxlibs v1_00 -q slf7
 
@@ -1663,8 +1692,8 @@ function print_status()
   else
     echo -e "${OUTBLUE}${b0}:${OUTGREEN} ${FULLFNAME}.xml exists ${OUTNOCOL}"
   fi
-  echo -e "${OUTBLUE}${b0}: stage4 generates ${REDUCEDFNAME}.xml ${OUTNOCOL}"
 
+  echo -e "${OUTBLUE}${b0}: stage5 generates ${REDUCEDFNAME}.xml and ${GXSECTGRAPH} ${OUTNOCOL}"
   have_file work-products/${REDUCEDFNAME}.xml
   if [ $? -ne 1 ]; then
     echo -e "${b0}:${OUTRED} missing ${REDUCEDFNAME}.xml ${OUTNOCOL}"
@@ -1672,8 +1701,25 @@ function print_status()
   else
     echo -e "${OUTBLUE}${b0}:${OUTGREEN} ${REDUCEDFNAME}.xml exists ${OUTNOCOL}"
   fi
-  echo -e "${OUTBLUE}${b0}: stage5 generates ${UPSTARFILE} ${OUTNOCOL}"
 
+  have_file work-products/${GXSECTGRAPH}
+  have_file_and_log=$?
+  have_file work-products/${GXSECTGRAPH}.log
+  have_log=$?
+  # should be two .root & .root.log; if just missing the log note and proceed
+  if [ $have_file_and_log -eq 2 ]; then
+    echo -e "${OUTBLUE}${b0}:${OUTGREEN} ${GXSECTGRAPH} exists ${OUTNOCOL}"
+  else
+    if [ $have_file_and_log -eq 1 ] && [ $have_log -eq 0 ]; then
+      echo -e "${OUTBLUE}${b0}:${OUTORANGE} missing ${GXSECTGRAPH}.log ${OUTNOCOL}"
+      echo -e "${OUTBLUE}${b0}:${OUTORANGE} continue anyway ${OUTNOCOL}"
+    else
+      echo -e "${OUTBLUE}${b0}:${OUTRED} missing ${GXSECTGRAPH} but not log ${OUTNOCOL}"
+      return 2
+    fi
+  fi
+
+  echo -e "${OUTBLUE}${b0}: stage6 generates ${UPSTARFILE} ${OUTNOCOL}"
   have_file ups/${UPSTARFILE}
   if [ $? -ne 1 ]; then
     echo -e "${b0}:${OUTRED} missing ${UPSTARFILE} ${OUTNOCOL}"
@@ -1689,8 +1735,11 @@ function init_output_area()
   if [ -d ${OUTPUTDIR} -a ${REWRITE} -eq 0 ]; then
     echo -e "${b0}: ${OUTRED}output directory already exists for:${OUTNOCOL}"
     echo -e "  ${OUTGREEN}${OUTPUTDIR}${OUTNOCOL}"
-    echo -e "${OUTRED}to overwrite existing files use --rewrite${OUTNOCOL}"
+    echo -e "${OUTRED}to overwrite existing files, use --rewrite${OUTNOCOL}"
     exit 1
+  fi
+  if [ -d ${OUTPUTDIR} -a ${REWRITE} -eq 1 ]; then
+    rm -rf ${OUTPUTDIR}
   fi
   echo -e "${OUTBLUE}${b0}: create the working area:${OUTNOCOL}"
   echo -e "    ${OUTGREEN}${OUTPUTDIR}${OUTNOCOL}"
@@ -1734,6 +1783,7 @@ function init_output_area()
 
   # copy any custom tune
   if [ ${CUSTOMTUNE} -ne 0 ]; then
+      echo "-RWH--------------------------------RWH c=$CUSTOMTUNE o=$ORIGINALDIR f=$FETCHTUNEFROM ---"
     FIRSTCHAR=`echo ${FETCHTUNEFROM} | cut -c1`
     if [ "$FIRSTCHAR" == "." -o "$FIRSTCHAR" != "/" ]; then
       FETCHTUNEFROM="${ORIGINALDIR}/${FETCHTUNEFROM}"
@@ -1986,6 +2036,12 @@ function generate_isotope_split_nu()
 }
 function combine_stage3()
 {
+  # this is stage4
+  #   gspladd partial sums for various probes for same isotope if necessary
+  #   gspladd isotopes together to make large file
+  #   create awk script
+  #   use awk to make small file
+  #   gspl2root to make root file of limited isotopes based on isotopes.cfg
   echo PROBELISTFULL=${PROBELISTFULL}
   echo PROBELISTREDUCED=${PROBELISTREDUCED}
   echo ISOLISTFULL=${ISOLISTFULL}
@@ -2098,11 +2154,15 @@ function combine_stage3()
     cat ${LOG}
     exit ${gspladd_status}
   fi
+}
 
-  echo -e "${OUTBLUE}${b0}: combine_stage3 create ${REDUCEDFNAME}.xml ${OUTNOCOL}"
+make_small_root() {
+    echo -e "${OUTBLUE}${b0}: combine_stage3 create ${REDUCEDFNAME}.xml ${OUTNOCOL}"
   XML=${REDUCEDFNAME}.xml
   LOG=${REDUCEDFNAME}.log
   if [ -f $LOG ]; then rm $LOG; fi
+
+  ${MYCP} $OUTPUTDIR/work-products/${FULLNAME}.xml ${FULLNAME}.xml
 
   # create reduction script at this point once it's all configured
   create_reduce_awk_script
@@ -2116,7 +2176,7 @@ function combine_stage3()
   ${MYCP} ${XML} $OUTPUTDIR/work-products/${XML}
   ${MYCP} ${LOG} $OUTPUTDIR/work-products/${LOG}
 
-  echo -e "${OUTBLUE}${b0}: combine_stage3 create root file ${GXSECTGRAPH} ${OUTNOCOL}"
+  echo -e "${OUTBLUE}${b0}: make_small_root create root file ${GXSECTGRAPH} ${OUTNOCOL}"
 
   # gspl2root won't re-do entries that already exist, so just start fresh
   if [ -f ${GXSECTGRAPH} ]; then rm ${GXSECTGRAPH} ; fi
@@ -2207,27 +2267,34 @@ echo "</parallel>" >> $DAG
 echo "<serial>" >> $DAG
 echo "  ${jsdcmd} ${bigmem} ${shortt} ${bigd} ${basic} --run-stage 4" >> $DAG
 echo "  ${jsdcmd} ${bigmem} ${shortt} ${bigd} ${basic} --run-stage 5" >> $DAG
+echo "  ${jsdcmd} ${bigmem} ${shortt} ${bigd} ${basic} --run-stage 6" >> $DAG
 echo "</serial>" >> $DAG
 
 cp ${DAG} $OUTPUTDIR/cfg/${DAG}
 }
+
 function make_cfg_tar()
 {
 echo -e "${OUTBLUE}${b0}: make_cfg_tar ${OUTNOCOL}"
 HERE=`pwd`
 cd ${OUTPUTDIR}/cfg
-echo -e  "${OUTYELLOW} RWH --- HERE is set to ${HERE} ${OUTNOCOL}"
-echo -e  "${OUTYELLOW} RWH --- pwd is  `pwd` ${OUTNOCOL}"
+
+source define_cfg.sh
+define_cfg # pick up our variables such as CUSTOMTUNE
+
+#echo -e  "${OUTYELLOW} RWH --- HERE is set to ${HERE} ${OUTNOCOL}"
+#echo -e  "${OUTYELLOW} RWH --- pwd is  `pwd` ${OUTNOCOL}"
 
 xmllist=`ls *.xml 2>/dev/null `
 # pull in custom CMC directory if present
-echo -e  "${OUTYELLOW} RWH --- FETCHTUNEFROM=${FETCHTUNEFROM} ${CUSTOMTUNE} ${INITTUNECMC} ${OUTNOCOL}"
-if [ -d ${INITTUNECMC} ]; then
+echo -e  "${OUTYELLOW} RWH --- CUSTOMTUNE=${CUSTOMTUNE} TUNECMC=${TUNECMC} TUNE=${TUNE}${OUTNOCOL}"
+if [ ${CUSTOMTUNE} -eq 1 -a -d ${TUNECMC} ]; then
   echo -e  "${OUTYELLOW} RWH --- add INITTUNECMC ${OUTNOCOL}"
-  xmllist="$xmllist ${INITTUNECMC}"
+  xmllist="$xmllist ${TUNECMC}"
 else
-  echo -e  "${OUTYELLOW} RWH --- no INITTUNECMC ${INITTUNECMC} in `pwd` ${OUTNOCOL}"
+  echo -e  "${OUTYELLOW} RWH --- no TUNECMC ${TUNECMC} in `pwd` ${OUTNOCOL}"
 fi
+echo "-RWH---- xmllist=${xmllist}"
 echo -e "${OUTYELLOW} RWH tar cfz ${HERE}/cfg.tar.gz *.sh *.cfg $xmllist ${OUTNOCOL}"
 tar cfz ${HERE}/cfg.tar.gz *.sh *.cfg $xmllist
 cd ${HERE}
@@ -2501,6 +2568,7 @@ export INITGENLIST="Default"
 export INITDOELECTRON=0
 export CUSTOMTUNE=0
 export FETCHTUNEFROM=""
+export FETCHISOTOPES=""
 
 export  INITSETUPSTR="ups:genie%v3_XX%e17:r6:prof:rhatcher"
 #export INITGENIEV="v2_8_6b"
@@ -2533,7 +2601,8 @@ process_args() {
   # use this for targfile lowth peanut
   TEMP=`getopt -n $0 -s bash -a \
      --longoptions="help verbose top: version: qualifier: setup: init rewrite split-nu-isotopes \
-     knots: emax: tune: genlist: electron fetch-tune-from: run-stage: subprocess: instance: status finalize-cfg:: \
+     knots: emax: tune: genlist: electron fetch-tune-from: fetch-isotopes: \
+     run-stage: subprocess: instance: status finalize-cfg:: \
      launch-dag:: skip-stage3-check keep-scratch morehelp debug trace" \
      -o hvT:V:Q:ir:s:-: -- "$@" `
 # remove "ups genie-v: genie-q:", replace w/ "setup:"
@@ -2568,6 +2637,7 @@ process_args() {
            --genlist      ) export INITGENLIST="$2";    shift  ;;
            --electron     ) export INITDOELECTRON=1;    ;;
            --fetch-tune-from ) export FETCHTUNEFROM="$2"; shift ;;
+           --fetch-isotopes  ) export FETCHISOTOPES="$2"; shift ;;
            --finalize-cfg ) export DOFINALIZECFG=1
                             # optional arg :: (blank if not given)
                             JSG_ARG1="$2";              shift  ;;
@@ -2908,7 +2978,8 @@ else
             generate_isotope_split_nu
           fi ;;
       4 ) combine_stage3       ;;
-      5 ) create_ups           ;;
+      5 ) make_small_root      ;;
+      6 ) create_ups           ;;
       * ) echo -e "${OUTRED}${b0}: no stage ${CURSTAGE} ${OUTNOCOL}"
           ;;
     esac
