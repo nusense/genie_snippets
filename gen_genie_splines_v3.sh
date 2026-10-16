@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 export THISFILE="$0"
 export b0=`basename $0`
-export GEN_GENIE_SPLINE_VERSION=2025-01-13
+export GEN_GENIE_SPLINE_VERSION=2026-10-02
 echo -e "${OUTRED}GEN_GENIE_SPLINE_VERSION ${GEN_GENIE_SPLINE_VERSION} ${OUTNOCOL}"
 
 export IFDHC_VERSION="" # "v2_7_2"  # usually "" default to v2_7_2 currently
